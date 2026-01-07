@@ -1,8 +1,8 @@
-import { getProducts, getDashboardStats, getSetting } from "@/lib/db/queries"
+import { getProducts, getDashboardStats, getSetting, getVisitorCount } from "@/lib/db/queries"
 import { AdminProductsContent } from "@/components/admin/products-content"
 
 export default async function AdminPage() {
-    const [products, stats, shopName] = await Promise.all([
+    const [products, stats, shopName, visitorCount] = await Promise.all([
         getProducts(),
         getDashboardStats(),
         (async () => {
@@ -10,6 +10,13 @@ export default async function AdminPage() {
                 return await getSetting('shop_name')
             } catch {
                 return null
+            }
+        })(),
+        (async () => {
+            try {
+                return await getVisitorCount()
+            } catch {
+                return 0
             }
         })(),
     ])
@@ -27,6 +34,7 @@ export default async function AdminPage() {
             }))}
             stats={stats}
             shopName={shopName}
+            visitorCount={visitorCount}
         />
     )
 }

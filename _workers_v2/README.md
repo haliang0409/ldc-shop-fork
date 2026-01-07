@@ -44,8 +44,10 @@ wrangler d1 create ldc-shop-db
 
 然后初始化数据库表结构：
 ```bash
-wrangler d1 execute ldc-shop-db --file=schema.sql
+wrangler d1 execute ldc-shop-db --file=schema.sql --remote
 ```
+
+> **注意**：必须加上 `--remote` 参数，否则只会初始化本地开发数据库，导致线上部署后报错。
 
 > 如果从旧版升级：建议新建 D1 数据库，或手动新增字段与表（products.is_active/sort_order/purchase_limit、cards.reserved_order_id/reserved_at、sessions.csrf_token、settings、reviews、login_users）。
 

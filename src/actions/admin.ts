@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { products, cards } from "@/lib/db/schema"
+import { products, cards, reviews } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { setSetting } from "@/lib/db/queries"
@@ -105,6 +105,7 @@ export async function deleteCard(cardId: number) {
     revalidatePath('/')
 }
 
+
 export async function saveShopName(rawName: string) {
     await checkAdmin()
 
@@ -139,3 +140,10 @@ export async function saveShopName(rawName: string) {
     revalidatePath('/')
     revalidatePath('/admin')
 }
+
+export async function deleteReview(reviewId: number) {
+    await checkAdmin()
+    await db.delete(reviews).where(eq(reviews.id, reviewId))
+    revalidatePath('/admin/reviews')
+}
+

@@ -34,7 +34,9 @@
         "sold": "Sold",
         "buyNow": "Buy Now",
         "processing": "Processing...",
-        "viewDetails": "View Details"
+        "viewDetails": "View Details",
+        "reviews": "Reviews",
+        "dataExport": "Data Export"
     },
     "home": {
         "title": "Welcome to LDC Shop",
@@ -99,11 +101,37 @@
             "save": "Save",
             "shopNameEmpty": "Store name cannot be empty"
         },
+        "export": {
+            "title": "Data Export",
+            "subtitle": "Download data for backups, audits, or migrations.",
+            "orders": "Orders",
+            "products": "Products",
+            "reviews": "Reviews",
+            "settings": "Settings",
+            "fullDump": "Full Dump",
+            "currentShopName": "Current store name",
+            "csv": "CSV",
+            "json": "JSON",
+            "csvWithSecrets": "CSV (include secrets)",
+            "d1Sql": "D1 SQL (INSERT OR IGNORE)",
+            "fullDumpHint": "The SQL format is compatible with Cloudflare D1 imports and is similar to scripts/export-data.ts."
+        },
+        "reviews": {
+            "title": "Reviews",
+            "searchPlaceholder": "Search by user / product / order / comment...",
+            "product": "Product",
+            "user": "User",
+            "rating": "Rating",
+            "comment": "Comment",
+            "date": "Date",
+            "actions": "Actions"
+        },
         "stats": {
             "today": "Today",
             "week": "Last 7 Days",
             "month": "This Month",
-            "total": "Total"
+            "total": "Total",
+            "visitors": "Customers"
         },
         "products": {
             "title": "Products",
@@ -129,9 +157,11 @@
             "product": "Product",
             "amount": "Amount",
             "status": "Status",
+            "tradeNo": "Trade No",
             "cardKey": "Card Key",
             "date": "Date",
             "actions": "Actions",
+            "searchPlaceholder": "Search by order / user / email / product / trade...",
             "refund": "Refund",
             "markRefunded": "Mark Refunded",
             "refundConfirm": "This will open the refund page in a new tab.\n\nSteps:\n1. Complete the refund in the new tab\n2. Verify success in Linux DO Credit dashboard\n3. Return here and click \"Mark Refunded\"\n\nContinue?",

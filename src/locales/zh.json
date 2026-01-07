@@ -34,7 +34,9 @@
         "sold": "已售",
         "buyNow": "立即购买",
         "processing": "处理中...",
-        "viewDetails": "查看详情"
+        "viewDetails": "查看详情",
+        "reviews": "评价管理",
+        "dataExport": "数据导出"
     },
     "home": {
         "title": "欢迎来到 LDC 商店",
@@ -99,11 +101,37 @@
             "save": "保存",
             "shopNameEmpty": "商店名称不能为空"
         },
+        "export": {
+            "title": "数据导出",
+            "subtitle": "用于备份、对账或迁移的数据下载（仅管理员可用）。",
+            "orders": "订单",
+            "products": "商品",
+            "reviews": "评价",
+            "settings": "设置",
+            "fullDump": "全量导出",
+            "currentShopName": "当前商店名称",
+            "csv": "CSV",
+            "json": "JSON",
+            "csvWithSecrets": "CSV（包含敏感字段）",
+            "d1Sql": "D1 SQL（INSERT OR IGNORE）",
+            "fullDumpHint": "SQL 格式兼容 Cloudflare D1 导入，内容与 scripts/export-data.ts 类似。"
+        },
+        "reviews": {
+            "title": "评价管理",
+            "searchPlaceholder": "按用户 / 商品 / 订单 / 内容搜索...",
+            "product": "商品",
+            "user": "用户",
+            "rating": "评分",
+            "comment": "内容",
+            "date": "日期",
+            "actions": "操作"
+        },
         "stats": {
             "today": "今日",
             "week": "近7天",
             "month": "本月",
-            "total": "总计"
+            "total": "总计",
+            "visitors": "顾客数"
         },
         "products": {
             "title": "商品管理",
@@ -129,9 +157,11 @@
             "product": "商品",
             "amount": "金额",
             "status": "状态",
+            "tradeNo": "交易号",
             "cardKey": "卡密",
             "date": "日期",
             "actions": "操作",
+            "searchPlaceholder": "搜索订单 / 用户 / 邮箱 / 商品 / 交易号...",
             "refund": "退款",
             "markRefunded": "标记已退款",
             "refundConfirm": "这将在新标签页中打开退款页面。步骤：1. 在新标签页中完成退款 2. 在 Linux DO Credit 后台确认退款成功 3. 返回此处点击【标记已退款】继续？",

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Eye, EyeOff, ArrowUp, ArrowDown, TrendingUp, ShoppingCart, CreditCard, Package } from "lucide-react"
+import { Plus, Eye, EyeOff, ArrowUp, ArrowDown, TrendingUp, ShoppingCart, CreditCard, Package, Users } from "lucide-react"
 import { deleteProduct, toggleProductStatus, reorderProduct, saveShopName } from "@/actions/admin"
 import { toast } from "sonner"
 
@@ -34,9 +34,10 @@ interface AdminProductsContentProps {
     products: Product[]
     stats: Stats
     shopName: string | null
+    visitorCount: number
 }
 
-export function AdminProductsContent({ products, stats, shopName }: AdminProductsContentProps) {
+export function AdminProductsContent({ products, stats, shopName, visitorCount }: AdminProductsContentProps) {
     const { t } = useI18n()
     const [shopNameValue, setShopNameValue] = useState(shopName || '')
     const [savingShopName, setSavingShopName] = useState(false)
@@ -125,7 +126,7 @@ export function AdminProductsContent({ products, stats, shopName }: AdminProduct
             </Card>
 
             {/* Dashboard Stats */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('admin.stats.today')}</CardTitle>
@@ -164,6 +165,16 @@ export function AdminProductsContent({ products, stats, shopName }: AdminProduct
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.total.count}</div>
                         <p className="text-xs text-muted-foreground">{stats.total.revenue.toFixed(0)} {t('common.credits')}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{t('admin.stats.visitors')}</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{visitorCount}</div>
+                        <p className="text-xs text-muted-foreground">{t('home.visitorCount', { count: visitorCount })}</p>
                     </CardContent>
                 </Card>
             </div>
