@@ -23,6 +23,11 @@ export function AdminDiscountsContent({ codes }: { codes: any[] }) {
   const [endsAt, setEndsAt] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const [genLength, setGenLength] = useState('8')
+  const [genUpperCase, setGenUpperCase] = useState(true)
+  const [genLowerCase, setGenLowerCase] = useState(true)
+  const [genNumbers, setGenNumbers] = useState(true)
+
   const sorted = useMemo(() => {
     return [...(codes || [])].sort((a, b) => String(a.code).localeCompare(String(b.code)))
   }, [codes])
@@ -66,6 +71,24 @@ export function AdminDiscountsContent({ codes }: { codes: any[] }) {
     }
   }
 
+  const generateCode = () => {
+    const len = Math.max(1, Math.min(50, Number(genLength) || 8))
+    let chars = ''
+    if (genUpperCase) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    if (genLowerCase) chars += 'abcdefghijklmnopqrstuvwxyz'
+    if (genNumbers) chars += '0123456789'
+    if (!chars) {
+      toast.error('Please select at least one character type')
+      return
+    }
+    let generated = ''
+    for (let i = 0; i < len; i++) {
+      generated += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setCode(generated.toUpperCase())
+    toast.success('Code generated')
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       <h1 className="text-3xl font-bold tracking-tight">{t('admin.discounts.title')}</h1>
@@ -77,7 +100,54 @@ export function AdminDiscountsContent({ codes }: { codes: any[] }) {
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="dc-code">{t('admin.discounts.code')}</Label>
-            <Input id="dc-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="WELCOME10" />
+            <div className="flex gap-2">
+              <Input id="dc-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="WELCOME10" />
+              <Button type="button" variant="outline" onClick={generateCode}>Generate</Button>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="text-xs text-muted-foreground">Code Generator Options</Label>
+            <div className="space-y-2">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Label htmlFor="gen-length" className="text-xs">Length</Label>
+                  <Input id="gen-length" type="number" min="1" max="50" value={genLength} onChange={(e) => setGenLength(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="gen-upper"
+                    type="checkbox"
+                    checked={genUpperCase}
+                    onChange={(e) => setGenUpperCase(e.target.checked)}
+                    className="h-3 w-3 accent-primary"
+                  />
+                  <Label htmlFor="gen-upper" className="text-xs cursor-pointer">A-Z</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="gen-lower"
+                    type="checkbox"
+                    checked={genLowerCase}
+                    onChange={(e) => setGenLowerCase(e.target.checked)}
+                    className="h-3 w-3 accent-primary"
+                  />
+                  <Label htmlFor="gen-lower" className="text-xs cursor-pointer">a-z</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="gen-numbers"
+                    type="checkbox"
+                    checked={genNumbers}
+                    onChange={(e) => setGenNumbers(e.target.checked)}
+                    className="h-3 w-3 accent-primary"
+                  />
+                  <Label htmlFor="gen-numbers" className="text-xs cursor-pointer">0-9</Label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-2">
