@@ -34,6 +34,13 @@ export async function GET() {
                 product_id TEXT NOT NULL,
                 product_name TEXT NOT NULL,
                 amount DECIMAL(10, 2) NOT NULL,
+                original_amount DECIMAL(10, 2),
+                discount_code TEXT,
+                discount_amount DECIMAL(10, 2),
+                admin_adjusted_from DECIMAL(10, 2),
+                admin_adjusted_by TEXT,
+                admin_adjusted_reason TEXT,
+                admin_adjusted_at TIMESTAMP,
                 email TEXT,
                 status TEXT DEFAULT 'pending',
                 trade_no TEXT,
@@ -43,6 +50,19 @@ export async function GET() {
                 user_id TEXT,
                 username TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS discount_codes (
+                code TEXT PRIMARY KEY,
+                type TEXT NOT NULL,
+                value DECIMAL(10, 2) NOT NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                max_uses INTEGER,
+                used_count INTEGER DEFAULT 0 NOT NULL,
+                min_amount DECIMAL(10, 2),
+                starts_at TIMESTAMP,
+                ends_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
             );
             CREATE TABLE IF NOT EXISTS login_users (
                 user_id TEXT PRIMARY KEY,
@@ -57,6 +77,13 @@ export async function GET() {
             ALTER TABLE products ADD COLUMN IF NOT EXISTS purchase_limit INTEGER;
             ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_order_id TEXT;
             ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS original_amount DECIMAL(10, 2);
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code TEXT;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10, 2);
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_from DECIMAL(10, 2);
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
+            ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
         `);
 
         return NextResponse.json({ success: true, message: "Database initialized successfully" });

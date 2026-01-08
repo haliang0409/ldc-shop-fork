@@ -7,8 +7,29 @@ import { cancelExpiredOrders } from "@/lib/db/queries"
 import { generateOrderId, generateSign } from "@/lib/crypto"
 import { eq, sql, and, or } from "drizzle-orm"
 import { cookies } from "next/headers"
+import { previewDiscountForProduct } from "@/actions/discounts"
 
-export async function createOrder(productId: string, email?: string, usePoints: boolean = false) {
+async function ensureOrdersPromoColumns() {
+    await db.execute(sql`
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS original_amount DECIMAL(10, 2);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10, 2);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_from DECIMAL(10, 2);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+    `)
+}
+
+function normalizeDiscountCode(raw: string | undefined) {
+    return String(raw || '').trim().toUpperCase()
+}
+
+function round2(n: number) {
+    return Math.round((n + Number.EPSILON) * 100) / 100
+}
+
+export async function createOrder(productId: string, email?: string, usePoints: boolean = false, discountCode?: string) {
     const session = await auth()
     const user = session?.user
 
@@ -24,9 +45,34 @@ export async function createOrder(productId: string, email?: string, usePoints: 
         // Best effort cleanup
     }
 
-    // Points Calculation
+    // Ensure new columns exist (best-effort, for old deployments)
+    try {
+        await ensureOrdersPromoColumns()
+    } catch {
+        // best effort
+    }
+
+    const baseAmount = Number(product.price)
+    const normalizedCode = normalizeDiscountCode(discountCode)
+    let appliedDiscountCode: string | null = null
+    let discountAmount = 0
+    let amountAfterDiscount = baseAmount
+
+    if (normalizedCode) {
+        try {
+            const preview = await previewDiscountForProduct(productId, normalizedCode)
+            if (!preview.ok) return { success: false, error: preview.error }
+            appliedDiscountCode = preview.code
+            discountAmount = preview.discountAmount
+            amountAfterDiscount = preview.discountedAmount
+        } catch {
+            return { success: false, error: 'discount.invalid' }
+        }
+    }
+
+    // Points Calculation (based on discounted amount)
     let pointsToUse = 0
-    let finalAmount = Number(product.price)
+    let finalAmount = amountAfterDiscount
 
     if (usePoints && user?.id) {
         const userRec = await db.query.loginUsers.findFirst({
@@ -186,7 +232,10 @@ export async function createOrder(productId: string, email?: string, usePoints: 
                     orderId,
                     productId: product.id,
                     productName: product.name,
-                    amount: finalAmount.toString(), // 0.00
+                    amount: round2(finalAmount).toFixed(2), // 0.00
+                    originalAmount: round2(baseAmount).toFixed(2),
+                    discountCode: appliedDiscountCode,
+                    discountAmount: discountAmount ? round2(discountAmount).toFixed(2) : null,
                     email: email || user?.email || null,
                     userId: user?.id || null,
                     username: user?.username || null,
@@ -204,7 +253,10 @@ export async function createOrder(productId: string, email?: string, usePoints: 
                     orderId,
                     productId: product.id,
                     productName: product.name,
-                    amount: finalAmount.toString(),
+                    amount: round2(finalAmount).toFixed(2),
+                    originalAmount: round2(baseAmount).toFixed(2),
+                    discountCode: appliedDiscountCode,
+                    discountAmount: discountAmount ? round2(discountAmount).toFixed(2) : null,
                     email: email || user?.email || null,
                     userId: user?.id || null,
                     username: user?.username || null,
@@ -237,6 +289,12 @@ export async function createOrder(productId: string, email?: string, usePoints: 
                 ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_order_id TEXT;
                 ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP;
             `);
+
+            try {
+                await ensureOrdersPromoColumns()
+            } catch {
+                // best effort
+            }
 
             try {
                 await reserveAndCreate();
@@ -273,6 +331,46 @@ export async function createOrder(productId: string, email?: string, usePoints: 
         return_url: `${baseUrl}/callback/${orderId}`,
         name: product.name,
         money: Number(finalAmount).toFixed(2),
+        sign_type: 'MD5'
+    }
+
+    payParams.sign = generateSign(payParams, process.env.MERCHANT_KEY!)
+
+    return {
+        success: true,
+        url: process.env.PAY_URL || 'https://credit.linux.do/epay/pay/submit.php',
+        params: payParams
+    }
+}
+
+export async function createPaymentForOrder(orderIdRaw: string) {
+    const orderId = String(orderIdRaw || '').trim()
+    if (!orderId) return { success: false, error: 'common.error' }
+
+    const session = await auth()
+    const user = session?.user
+
+    const order = await db.query.orders.findFirst({ where: eq(orders.orderId, orderId) })
+    if (!order) return { success: false, error: 'common.error' }
+
+    const status = order.status || 'pending'
+    if (status !== 'pending') return { success: false, error: 'order.notPayable' }
+
+    const isOwner = !!(user && (user.id === order.userId || user.username === order.username))
+    if (!isOwner) return { success: false, error: 'common.error' }
+
+    const cookieStore = await cookies()
+    cookieStore.set('ldc_pending_order', orderId, { secure: true, path: '/', sameSite: 'lax' })
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    const payParams: Record<string, any> = {
+        pid: process.env.MERCHANT_ID!,
+        type: 'epay',
+        out_trade_no: orderId,
+        notify_url: `${baseUrl}/api/notify`,
+        return_url: `${baseUrl}/callback/${orderId}`,
+        name: order.productName,
+        money: Number(order.amount).toFixed(2),
         sign_type: 'MD5'
     }
 

@@ -35,6 +35,13 @@ export const orders = pgTable('orders', {
     productId: text('product_id').notNull(),
     productName: text('product_name').notNull(),
     amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+    originalAmount: decimal('original_amount', { precision: 10, scale: 2 }),
+    discountCode: text('discount_code'),
+    discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }),
+    adminAdjustedFrom: decimal('admin_adjusted_from', { precision: 10, scale: 2 }),
+    adminAdjustedBy: text('admin_adjusted_by'),
+    adminAdjustedReason: text('admin_adjusted_reason'),
+    adminAdjustedAt: timestamp('admin_adjusted_at'),
     email: text('email'),
     status: text('status').default('pending'), // pending, paid, delivered, failed, refunded
     tradeNo: text('trade_no'),
@@ -45,6 +52,21 @@ export const orders = pgTable('orders', {
     username: text('username'),
     pointsUsed: integer('points_used').default(0),
     createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Discount Codes
+export const discountCodes = pgTable('discount_codes', {
+    code: text('code').primaryKey(),
+    type: text('type').notNull(), // 'amount' | 'percent'
+    value: decimal('value', { precision: 10, scale: 2 }).notNull(),
+    isActive: boolean('is_active').default(true),
+    maxUses: integer('max_uses'),
+    usedCount: integer('used_count').default(0).notNull(),
+    minAmount: decimal('min_amount', { precision: 10, scale: 2 }),
+    startsAt: timestamp('starts_at'),
+    endsAt: timestamp('ends_at'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // Logged-in users (for visitor counts)

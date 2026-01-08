@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react"
 import { createOrder } from "@/actions/checkout"
 import { getUserPoints } from "@/actions/points"
+import { previewDiscountForProduct } from "@/actions/discounts"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Loader2, Coins } from "lucide-react"
 import { toast } from "sonner"
 import { useI18n } from "@/lib/i18n/context"
@@ -23,6 +25,9 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
     const [points, setPoints] = useState(0)
     const [usePoints, setUsePoints] = useState(false)
     const [pointsLoading, setPointsLoading] = useState(false)
+    const [discountCode, setDiscountCode] = useState('')
+    const [discountApplying, setDiscountApplying] = useState(false)
+    const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; discountAmount: number; discountedAmount: number } | null>(null)
     const { t } = useI18n()
 
     const numericalPrice = Number(price)
@@ -45,7 +50,7 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
     const handleBuy = async () => {
         try {
             setLoading(true)
-            const result = await createOrder(productId, undefined, usePoints)
+            const result = await createOrder(productId, undefined, usePoints, appliedDiscount?.code || undefined)
 
             if (!result?.success) {
                 const message = result?.error ? t(result.error) : t('common.error')
@@ -92,9 +97,38 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
         }
     }
 
+    const handleApplyDiscount = async () => {
+        const code = (discountCode || '').trim()
+        if (!code) {
+            setAppliedDiscount(null)
+            return
+        }
+        setDiscountApplying(true)
+        try {
+            const preview = await previewDiscountForProduct(productId, code)
+            if (!preview.ok) {
+                setAppliedDiscount(null)
+                toast.error(t(preview.error))
+                return
+            }
+            setAppliedDiscount({
+                code: preview.code,
+                discountAmount: preview.discountAmount,
+                discountedAmount: preview.discountedAmount,
+            })
+            toast.success(t('discount.applied'))
+        } catch (e: any) {
+            setAppliedDiscount(null)
+            toast.error(e?.message || t('discount.invalid'))
+        } finally {
+            setDiscountApplying(false)
+        }
+    }
+
     // Calculation for UI
-    const pointsToUse = usePoints ? Math.min(points, Math.ceil(numericalPrice)) : 0
-    const finalPrice = Math.max(0, numericalPrice - pointsToUse)
+    const baseForPoints = appliedDiscount?.discountedAmount ?? numericalPrice
+    const pointsToUse = usePoints ? Math.min(points, Math.ceil(baseForPoints)) : 0
+    const finalPrice = Math.max(0, baseForPoints - pointsToUse)
 
     return (
         <>
@@ -118,6 +152,33 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
                         <div className="flex justify-between items-center">
                             <span className="font-medium">{t('buy.modal.price')}</span>
                             <span>{numericalPrice.toFixed(2)}</span>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="discount-code">{t('discount.code')}</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="discount-code"
+                                    value={discountCode}
+                                    onChange={(e) => setDiscountCode(e.target.value)}
+                                    placeholder={t('discount.placeholder')}
+                                    disabled={loading || discountApplying}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleApplyDiscount}
+                                    disabled={loading || discountApplying}
+                                >
+                                    {discountApplying ? t('common.processing') : t('discount.apply')}
+                                </Button>
+                            </div>
+                            {appliedDiscount && (
+                                <div className="text-sm text-muted-foreground flex justify-between">
+                                    <span>{t('discount.appliedCode', { code: appliedDiscount.code })}</span>
+                                    <span>-{appliedDiscount.discountAmount.toFixed(2)}</span>
+                                </div>
+                            )}
                         </div>
 
                         {points > 0 && (

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { orders, cards } from "@/lib/db/schema";
+import { incrementDiscountUseBestEffort } from "@/lib/discounts";
 import { md5 } from "@/lib/crypto";
 import { eq, sql } from "drizzle-orm";
 
@@ -136,12 +137,21 @@ async function processNotify(params: Record<string, any>) {
                             })
                             .where(eq(orders.orderId, orderId));
                         console.log("[Notify] Order delivered successfully!");
+
+                        if ((order as any).discountCode) {
+                            // best effort; don't block delivery
+                            await incrementDiscountUseBestEffort((order as any).discountCode as string)
+                        }
                     } else {
                         // Paid but no stock
                         await tx.update(orders)
                             .set({ status: 'paid', paidAt: new Date(), tradeNo: tradeNo })
                             .where(eq(orders.orderId, orderId));
                         console.log("[Notify] Order marked as paid (no stock)");
+
+                        if ((order as any).discountCode) {
+                            await incrementDiscountUseBestEffort((order as any).discountCode as string)
+                        }
                     }
                 });
             }

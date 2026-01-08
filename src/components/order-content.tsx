@@ -11,6 +11,7 @@ import { ClientDate } from "@/components/client-date"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { requestRefund } from "@/actions/refund-requests"
+import { createPaymentForOrder } from "@/actions/checkout"
 import { toast } from "sonner"
 
 interface Order {
@@ -34,6 +35,7 @@ export function OrderContent({ order, canViewKey, isOwner, refundRequest }: Orde
     const { t } = useI18n()
     const [reason, setReason] = useState("")
     const [submitting, setSubmitting] = useState(false)
+    const [paying, setPaying] = useState(false)
 
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
@@ -179,6 +181,45 @@ export function OrderContent({ order, canViewKey, isOwner, refundRequest }: Orde
                                 <Clock className="h-5 w-5" />
                             )}
                             <p className="text-sm">{getStatusMessage(order.status)}</p>
+                        </div>
+                    )}
+
+                    {isOwner && order.status === 'pending' && (
+                        <div className="flex justify-end">
+                            <Button
+                                onClick={async () => {
+                                    setPaying(true)
+                                    try {
+                                        const result = await createPaymentForOrder(order.orderId)
+                                        if (!result?.success || !result.url || !result.params) {
+                                            toast.error(t(result?.error || 'common.error'))
+                                            return
+                                        }
+
+                                        const form = document.createElement('form')
+                                        form.method = 'POST'
+                                        form.action = result.url as string
+
+                                        Object.entries(result.params as Record<string, any>).forEach(([k, v]) => {
+                                            const input = document.createElement('input')
+                                            input.type = 'hidden'
+                                            input.name = k
+                                            input.value = String(v)
+                                            form.appendChild(input)
+                                        })
+
+                                        document.body.appendChild(form)
+                                        form.submit()
+                                    } catch (e: any) {
+                                        toast.error(e.message || t('common.error'))
+                                    } finally {
+                                        setPaying(false)
+                                    }
+                                }}
+                                disabled={paying}
+                            >
+                                {paying ? t('common.processing') : t('order.payNow')}
+                            </Button>
                         </div>
                     )}
 

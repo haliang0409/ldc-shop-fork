@@ -13,7 +13,7 @@ import { CopyButton } from "@/components/copy-button"
 import { ClientDate } from "@/components/client-date"
 import { RefundButton } from "@/components/admin/refund-button"
 import { toast } from "sonner"
-import { markOrderDelivered, markOrderPaid, cancelOrder, updateOrderEmail, deleteOrder } from "@/actions/admin-orders"
+import { markOrderDelivered, markOrderPaid, cancelOrder, updateOrderEmail, deleteOrder, adminUpdatePendingOrderAmount } from "@/actions/admin-orders"
 
 function statusVariant(status: string | null) {
   switch (status) {
@@ -30,6 +30,9 @@ export function AdminOrderDetailContent({ order }: { order: any }) {
   const router = useRouter()
   const [email, setEmail] = useState(order.email || '')
   const [savingEmail, setSavingEmail] = useState(false)
+  const [newAmount, setNewAmount] = useState(String(order.amount ?? ''))
+  const [amountReason, setAmountReason] = useState('')
+  const [savingAmount, setSavingAmount] = useState(false)
 
   const status = order.status || 'pending'
   const canMarkPaid = status === 'pending'
@@ -70,6 +73,18 @@ export function AdminOrderDetailContent({ order }: { order: any }) {
       toast.error(e.message)
     } finally {
       setSavingEmail(false)
+    }
+  }
+
+  const handleSaveAmount = async () => {
+    setSavingAmount(true)
+    try {
+      await adminUpdatePendingOrderAmount(order.orderId, newAmount, amountReason)
+      toast.success(t('common.success'))
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setSavingAmount(false)
     }
   }
 
@@ -133,6 +148,29 @@ export function AdminOrderDetailContent({ order }: { order: any }) {
               <div className="text-sm text-muted-foreground">{t('admin.orders.amount')}</div>
               <div className="font-medium">{Number(order.amount)} {t('common.credits')}</div>
             </div>
+
+            {status === 'pending' && (
+              <div className="space-y-2">
+                <Label htmlFor="order-amount">{t('admin.orders.adjustAmount')}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="order-amount"
+                    type="number"
+                    step="0.01"
+                    value={newAmount}
+                    onChange={(e) => setNewAmount(e.target.value)}
+                  />
+                  <Button variant="outline" onClick={handleSaveAmount} disabled={savingAmount}>
+                    {savingAmount ? t('common.processing') : t('common.save')}
+                  </Button>
+                </div>
+                <Input
+                  value={amountReason}
+                  onChange={(e) => setAmountReason(e.target.value)}
+                  placeholder={t('admin.orders.adjustAmountReasonPlaceholder')}
+                />
+              </div>
+            )}
 
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground">{t('admin.orders.user')}</div>

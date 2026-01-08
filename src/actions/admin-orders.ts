@@ -1,10 +1,20 @@
 'use server'
 
 import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { cards, orders, refundRequests, loginUsers } from "@/lib/db/schema"
 import { and, eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { checkAdmin } from "@/actions/admin"
+
+async function ensureOrdersAdminAdjustColumns() {
+  await db.execute(sql`
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_from DECIMAL(10, 2);
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+  `)
+}
 
 export async function markOrderPaid(orderId: string) {
   await checkAdmin()
@@ -80,6 +90,43 @@ export async function updateOrderEmail(orderId: string, email: string | null) {
   await db.update(orders).set({ email: next || null }).where(eq(orders.orderId, orderId))
   revalidatePath('/admin/orders')
   revalidatePath(`/admin/orders/${orderId}`)
+}
+
+export async function adminUpdatePendingOrderAmount(orderIdRaw: string, newAmountRaw: string, reasonRaw: string) {
+  await checkAdmin()
+  const orderId = String(orderIdRaw || '').trim()
+  if (!orderId) throw new Error("Missing order id")
+
+  const reason = String(reasonRaw || '').trim()
+  const nextAmount = Number(String(newAmountRaw || '').trim())
+  if (!Number.isFinite(nextAmount) || nextAmount < 0) throw new Error("Invalid amount")
+
+  try {
+    await ensureOrdersAdminAdjustColumns()
+  } catch {
+    // best effort
+  }
+
+  const order = await db.query.orders.findFirst({ where: eq(orders.orderId, orderId) })
+  if (!order) throw new Error("Order not found")
+
+  const status = order.status || 'pending'
+  if (status !== 'pending') throw new Error("Order is not pending")
+
+  const session = await auth()
+  const adminUsername = session?.user?.username || null
+
+  await db.update(orders).set({
+    amount: nextAmount.toFixed(2),
+    adminAdjustedFrom: order.amount,
+    adminAdjustedBy: adminUsername,
+    adminAdjustedReason: reason || null,
+    adminAdjustedAt: new Date(),
+  }).where(eq(orders.orderId, orderId))
+
+  revalidatePath('/admin/orders')
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath(`/order/${orderId}`)
 }
 
 async function deleteOneOrder(tx: any, orderId: string) {

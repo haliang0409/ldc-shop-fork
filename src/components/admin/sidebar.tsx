@@ -28,6 +28,9 @@ export function AdminSidebar({ username }: { username: string }) {
                     <Link href="/admin/categories"><Tags className="mr-2 h-4 w-4" />{t('common.categoriesManage')}</Link>
                 </Button>
                 <Button variant="ghost" asChild className="justify-start">
+                    <Link href="/admin/discounts"><Tags className="mr-2 h-4 w-4" />{t('common.discounts')}</Link>
+                </Button>
+                <Button variant="ghost" asChild className="justify-start">
                     <Link href="/admin/users"><Users className="mr-2 h-4 w-4" />{t('common.customers')}</Link>
                 </Button>
                 <Button variant="ghost" asChild className="justify-start">
