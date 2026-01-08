@@ -70,6 +70,7 @@
         "outOfStockMessage": "This product is currently out of stock.",
         "productNotFound": "Product not found",
         "outOfStock": "Product is out of stock",
+        "exceedsStock": "Requested quantity exceeds available stock",
         "limitExceeded": "Purchase limit exceeded. You cannot buy this product again.",
         "stockLocked": "Stock is temporarily reserved. Please try again in a minute.",
         "paymentTimeoutNotice": "Unpaid orders are automatically cancelled after 5 minutes.",
@@ -86,7 +87,10 @@
             "pointsDetails": "-{{points}} (Avail: {{available}})",
             "total": "Total",
             "payWithPoints": "Pay with Points",
-            "proceedPayment": "Proceed to Payment"
+            "proceedPayment": "Proceed to Payment",
+            "quantity": "Quantity",
+            "maxQuantity": "Max: {{max}}",
+            "reusableKeyHint": "Reusable single key"
         },
         "paymentSuccessPoints": "Payment successful using points!"
     },
@@ -135,6 +139,7 @@
         "yourContent": "Your Content",
         "clickToCopy": "Click to copy:",
         "saveKeySecurely": "Please save this key securely.",
+        "quantityLabel": "Quantity: {{qty}}",
         "loginToView": "Please login with the account used to purchase to view the content.",
         "waitingPayment": "Waiting for payment...",
         "payNow": "Pay Now",
@@ -376,7 +381,8 @@
             "saveButton": "Save Product",
             "purchaseLimitLabel": "Purchase Limit",
             "purchaseLimitPlaceholder": "0 or empty for unlimited",
-            "saving": "Saving..."
+            "saving": "Saving...",
+            "singleCardOnlyLabel": "Use reusable single key (same key can be sold multiple times)"
         }
     },
     "footer": {

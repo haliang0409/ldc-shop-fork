@@ -16,10 +16,13 @@ interface BuyButtonProps {
     productId: string
     price: string | number
     productName: string
+    stockCount?: number
+    singleCardOnly?: boolean
+    purchaseLimit?: number | null
     disabled?: boolean
 }
 
-export function BuyButton({ productId, price, productName, disabled }: BuyButtonProps) {
+export function BuyButton({ productId, price, productName, stockCount = 0, singleCardOnly = false, purchaseLimit, disabled }: BuyButtonProps) {
     const [loading, setLoading] = useState(false)
     const [open, setOpen] = useState(false)
     const [points, setPoints] = useState(0)
@@ -28,6 +31,7 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
     const [discountCode, setDiscountCode] = useState('')
     const [discountApplying, setDiscountApplying] = useState(false)
     const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; discountAmount: number; discountedAmount: number } | null>(null)
+    const [quantity, setQuantity] = useState<number>(1)
     const { t } = useI18n()
 
     const numericalPrice = Number(price)
@@ -50,7 +54,7 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
     const handleBuy = async () => {
         try {
             setLoading(true)
-            const result = await createOrder(productId, undefined, usePoints, appliedDiscount?.code || undefined)
+            const result = await createOrder(productId, undefined, usePoints, appliedDiscount?.code || undefined, quantity)
 
             if (!result?.success) {
                 const message = result?.error ? t(result.error) : t('common.error')
@@ -126,7 +130,7 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
     }
 
     // Calculation for UI
-    const baseForPoints = appliedDiscount?.discountedAmount ?? numericalPrice
+    const baseForPoints = (appliedDiscount?.discountedAmount ?? numericalPrice) * quantity
     const pointsToUse = usePoints ? Math.min(points, Math.ceil(baseForPoints)) : 0
     const finalPrice = Math.max(0, baseForPoints - pointsToUse)
 
@@ -179,6 +183,38 @@ export function BuyButton({ productId, price, productName, disabled }: BuyButton
                                     <span>-{appliedDiscount.discountAmount.toFixed(2)}</span>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Quantity Selector */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="quantity">{t('buy.modal.quantity') || 'Quantity'}</Label>
+                            <div className="flex gap-2 items-center">
+                                <Input
+                                    id="quantity"
+                                    type="number"
+                                    min={1}
+                                    value={quantity}
+                                    onChange={(e) => {
+                                        const v = Math.max(1, Number(e.target.value || 1))
+                                        const limitCap = purchaseLimit && purchaseLimit > 0 ? purchaseLimit : undefined
+                                        const stockCap = (!singleCardOnly && stockCount > 0) ? stockCount : undefined
+                                        const cap = typeof limitCap === 'number' && typeof stockCap === 'number'
+                                            ? Math.min(limitCap, stockCap)
+                                            : (limitCap ?? stockCap)
+                                        setQuantity(cap ? Math.min(v, cap) : v)
+                                    }}
+                                    disabled={loading}
+                                />
+                                {!singleCardOnly && stockCount > 0 && (
+                                    <span className="text-xs text-muted-foreground">{t('buy.modal.maxQuantity', { max: stockCount }) || `Max: ${stockCount}`}</span>
+                                )}
+                                {purchaseLimit && purchaseLimit > 0 && (
+                                    <span className="text-xs text-muted-foreground">{t('buy.purchaseLimit', { limit: purchaseLimit })}</span>
+                                )}
+                                {singleCardOnly && (
+                                    <span className="text-xs text-muted-foreground">{t('buy.modal.reusableKeyHint') || 'Reusable single key'}</span>
+                                )}
+                            </div>
                         </div>
 
                         {points > 0 && (

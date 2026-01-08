@@ -70,6 +70,7 @@
         "outOfStockMessage": "该商品暂时缺货",
         "productNotFound": "商品未找到",
         "outOfStock": "商品已售罄",
+        "exceedsStock": "超过可用库存数量",
         "limitExceeded": "超出限购次数，您不能再购买此商品",
         "stockLocked": "库存已被锁定，请稍后再试",
         "paymentTimeoutNotice": "未支付订单将在 5 分钟后自动取消。",
@@ -86,7 +87,10 @@
             "pointsDetails": "-{{points}} (可用: {{available}})",
             "total": "总计",
             "payWithPoints": "积分支付",
-            "proceedPayment": "前往支付"
+            "proceedPayment": "前往支付",
+            "quantity": "数量",
+            "maxQuantity": "最多：{{max}}",
+            "reusableKeyHint": "可重复单卡密"
         },
         "paymentSuccessPoints": "积分支付成功！"
     },
@@ -135,6 +139,7 @@
         "yourContent": "您的内容",
         "clickToCopy": "点击复制：",
         "saveKeySecurely": "请妥善保管此密钥",
+        "quantityLabel": "数量：{{qty}}",
         "loginToView": "请使用购买时使用的账号登录以查看内容",
         "waitingPayment": "等待支付...",
         "payNow": "去支付",
@@ -376,7 +381,8 @@
             "saveButton": "保存商品",
             "purchaseLimitLabel": "限购次数",
             "purchaseLimitPlaceholder": "不填或 0 为无限购",
-            "saving": "保存中..."
+            "saving": "保存中...",
+            "singleCardOnlyLabel": "使用可重复单卡密（同一密钥可多次售卖）"
         }
     },
     "footer": {

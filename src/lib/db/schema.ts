@@ -14,6 +14,7 @@ export const products = pgTable('products', {
     isActive: boolean('is_active').default(true),
     sortOrder: integer('sort_order').default(0),
     purchaseLimit: integer('purchase_limit'),
+    singleCardOnly: boolean('single_card_only').default(false),
     createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -35,6 +36,8 @@ export const orders = pgTable('orders', {
     productId: text('product_id').notNull(),
     productName: text('product_name').notNull(),
     amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+    quantity: integer('quantity').default(1),
+    cardKeys: text('card_keys'),
     originalAmount: decimal('original_amount', { precision: 10, scale: 2 }),
     discountCode: text('discount_code'),
     discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }),

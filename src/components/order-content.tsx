@@ -20,6 +20,8 @@ interface Order {
     amount: string
     status: string
     cardKey: string | null
+    cardKeys?: string | null
+    quantity?: number
     createdAt: Date | null
     paidAt: Date | null
 }
@@ -149,12 +151,30 @@ export function OrderContent({ order, canViewKey, isOwner, refundRequest }: Orde
                                             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
                                             <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
                                         </div>
-                                        <div className="mt-4">
-                                            {order.cardKey}
-                                        </div>
-                                        <div className="absolute top-3 right-3">
-                                            <CopyButton text={order.cardKey || ''} iconOnly />
-                                        </div>
+                                        {(() => {
+                                            const keys = (() => {
+                                                if (order.cardKeys) {
+                                                    try {
+                                                        const arr = JSON.parse(order.cardKeys) as string[]
+                                                        if (Array.isArray(arr) && arr.length) return arr
+                                                    } catch {}
+                                                }
+                                                return order.cardKey ? [order.cardKey] : []
+                                            })()
+                                            return (
+                                                <div className="mt-4 space-y-2">
+                                                    {keys.length > 1 && (
+                                                        <div className="text-xs text-muted-foreground">{t('order.quantityLabel', { qty: order.quantity || keys.length })}</div>
+                                                    )}
+                                                    {keys.map((k, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between gap-2">
+                                                            <span className="break-all">{k}</span>
+                                                            <CopyButton text={k} iconOnly />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )
+                                        })()}
                                     </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">

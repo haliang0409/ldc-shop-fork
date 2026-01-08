@@ -6,6 +6,7 @@ async function ensureProductsColumns() {
     await db.execute(sql`
         ALTER TABLE products ADD COLUMN IF NOT EXISTS compare_at_price DECIMAL(10, 2);
         ALTER TABLE products ADD COLUMN IF NOT EXISTS is_hot BOOLEAN DEFAULT FALSE;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS single_card_only BOOLEAN DEFAULT FALSE;
     `)
 }
 
@@ -19,6 +20,8 @@ async function ensureOrdersColumns() {
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS card_keys TEXT;
     `)
 }
 
@@ -61,6 +64,7 @@ export async function getProducts() {
             isActive: products.isActive,
             sortOrder: products.sortOrder,
             purchaseLimit: products.purchaseLimit,
+                singleCardOnly: products.singleCardOnly,
             stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`,
             sold: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = true then 1 end):: int`
         })
@@ -83,7 +87,8 @@ export async function getActiveProducts() {
             image: products.image,
             category: products.category,
             isHot: products.isHot,
-            purchaseLimit: products.purchaseLimit,
+                purchaseLimit: products.purchaseLimit,
+                singleCardOnly: products.singleCardOnly,
             stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`,
             sold: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = true then 1 end):: int`
         })
@@ -107,6 +112,7 @@ export async function getProduct(id: string) {
             category: products.category,
             isHot: products.isHot,
             purchaseLimit: products.purchaseLimit,
+                singleCardOnly: products.singleCardOnly,
             stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`
         })
             .from(products)
@@ -266,6 +272,7 @@ export async function searchActiveProducts(params: {
             category: products.category,
             isHot: products.isHot,
             purchaseLimit: products.purchaseLimit,
+                singleCardOnly: products.singleCardOnly,
             stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`,
             sold: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = true then 1 end):: int`
         })

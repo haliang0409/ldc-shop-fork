@@ -32,6 +32,7 @@ interface Product {
     category: string | null
     purchaseLimit?: number | null
     isHot?: boolean | null
+    singleCardOnly?: boolean | null
 }
 
 interface Review {
@@ -139,6 +140,11 @@ export function BuyContent({
                                     >
                                         {stockCount > 0 ? `${t('common.stock')}: ${stockCount}` : t('common.outOfStock')}
                                     </Badge>
+                                    {product.singleCardOnly && (
+                                        <Badge variant="secondary" className="mt-2">
+                                            {t('buy.modal.reusableKeyHint') || 'Reusable single key'}
+                                        </Badge>
+                                    )}
                                     {typeof product.purchaseLimit === 'number' && product.purchaseLimit > 0 && (
                                         <Badge variant="secondary" className="mt-2">
                                             {t('buy.purchaseLimit', { limit: product.purchaseLimit })}
@@ -191,6 +197,9 @@ export function BuyContent({
                                                 productId={product.id}
                                                 price={product.price}
                                                 productName={product.name}
+                                                stockCount={stockCount}
+                                                singleCardOnly={!!product.singleCardOnly}
+                                                purchaseLimit={product.purchaseLimit}
                                             />
                                         </div>
                                     ) : (

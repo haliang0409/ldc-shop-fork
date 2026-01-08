@@ -101,6 +101,17 @@ export default function ProductForm({ product, categories = [] }: { product?: an
                         />
                     </div>
 
+                    <div className="flex items-center gap-2">
+                        <input
+                            id="singleCardOnly"
+                            name="singleCardOnly"
+                            type="checkbox"
+                            defaultChecked={!!product?.singleCardOnly}
+                            className="h-4 w-4 accent-primary"
+                        />
+                        <Label htmlFor="singleCardOnly" className="cursor-pointer">{t('admin.productForm.singleCardOnlyLabel') || 'Use reusable single key (same key can be sold multiple times)'}</Label>
+                    </div>
+
                     <div className="pt-4 flex justify-end gap-2">
                         <Button variant="outline" type="button" onClick={() => router.back()}>{t('common.cancel')}</Button>
                         <Button type="submit" disabled={loading}>{loading ? t('admin.productForm.saving') : t('admin.productForm.saveButton')}</Button>

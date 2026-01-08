@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { orders, cards } from "@/lib/db/schema";
+import { orders, cards, products } from "@/lib/db/schema";
 import { incrementDiscountUseBestEffort } from "@/lib/discounts";
 import { md5 } from "@/lib/crypto";
 import { eq, sql } from "drizzle-orm";
@@ -55,23 +55,29 @@ async function processNotify(params: Record<string, any>) {
 
             if (order.status === 'pending' || order.status === 'cancelled') {
                 await db.transaction(async (tx) => {
-                    // Atomic update to claim card (Postgres only)
-                    // Finds the first unused card, locks it, and marks it as used
-                    let cardKey: string | undefined;
-                    let supportsReservation = true;
+                    // Delivery can be multi-quantity and/or reusable single-card
+                    const qty = (order as any).quantity ? Number((order as any).quantity) : 1
+                    let supportsReservation = true
+                    let cardKeys: string[] = []
+                    let firstKey: string | undefined
+                    // Check product mode
+                    const productRow = await tx.query.products.findFirst({ where: eq(products.id, order.productId) })
+                    const singleCardOnly = (productRow as any)?.singleCardOnly === true
 
                     try {
-                        const reservedResult = await tx.execute(sql`
-                            UPDATE cards
-                            SET is_used = true,
-                                used_at = NOW(),
-                                reserved_order_id = NULL,
-                                reserved_at = NULL
-                            WHERE reserved_order_id = ${orderId} AND COALESCE(is_used, false) = false
-                            RETURNING card_key
-                        `);
-
-                        cardKey = reservedResult.rows[0]?.card_key as string | undefined;
+                        if (!singleCardOnly) {
+                            const reservedResult = await tx.execute(sql`
+                                UPDATE cards
+                                SET is_used = true,
+                                    used_at = NOW(),
+                                    reserved_order_id = NULL,
+                                    reserved_at = NULL
+                                WHERE reserved_order_id = ${orderId} AND COALESCE(is_used, false) = false
+                                RETURNING card_key
+                            `)
+                            cardKeys = reservedResult.rows.map(r => r.card_key as string)
+                            firstKey = cardKeys[0]
+                        }
                     } catch (error: any) {
                         const errorString = JSON.stringify(error);
                         if (
@@ -85,55 +91,55 @@ async function processNotify(params: Record<string, any>) {
                         }
                     }
 
-                    if (!cardKey) {
-                        if (supportsReservation) {
+                    if (singleCardOnly) {
+                        // Reusable single key: fetch one key and repeat
+                        const keyRes = await tx.execute(sql`
+                            SELECT card_key FROM cards WHERE product_id = ${order.productId} LIMIT 1
+                        `)
+                        const reusableKey = keyRes.rows[0]?.card_key as string | undefined
+                        if (reusableKey) {
+                            cardKeys = Array(qty).fill(reusableKey)
+                            firstKey = reusableKey
+                        }
+                    }
+
+                    if (!singleCardOnly && cardKeys.length < qty) {
+                        // Need to claim additional free cards
+                        const needed = qty - cardKeys.length
+                        if (needed > 0) {
                             const result = await tx.execute(sql`
                                 UPDATE cards
                                 SET is_used = true,
                                     used_at = NOW(),
                                     reserved_order_id = NULL,
                                     reserved_at = NULL
-                                WHERE id = (
-                                    SELECT id
-                                    FROM cards
+                                WHERE id IN (
+                                    SELECT id FROM cards
                                     WHERE product_id = ${order.productId}
                                       AND COALESCE(is_used, false) = false
                                       AND (reserved_at IS NULL OR reserved_at < NOW() - INTERVAL '1 minute')
-                                    LIMIT 1
+                                    LIMIT ${needed}
                                     FOR UPDATE SKIP LOCKED
                                 )
                                 RETURNING card_key
-                            `);
-
-                            cardKey = result.rows[0]?.card_key as string | undefined;
-                        } else {
-                            const result = await tx.execute(sql`
-                                UPDATE cards
-                                SET is_used = true, used_at = NOW()
-                                WHERE id = (
-                                    SELECT id
-                                    FROM cards
-                                    WHERE product_id = ${order.productId} AND COALESCE(is_used, false) = false
-                                    LIMIT 1
-                                    FOR UPDATE SKIP LOCKED
-                                )
-                                RETURNING card_key
-                            `);
-
-                            cardKey = result.rows[0]?.card_key as string | undefined;
+                            `)
+                            const more = result.rows.map(r => r.card_key as string)
+                            cardKeys = cardKeys.concat(more)
+                            if (!firstKey) firstKey = cardKeys[0]
                         }
                     }
 
-                    console.log("[Notify] Card claimed:", cardKey ? "YES" : "NO");
+                    console.log("[Notify] Cards claimed:", cardKeys.length)
 
-                    if (cardKey) {
+                    if ((singleCardOnly && firstKey) || (!singleCardOnly && cardKeys.length === qty)) {
                         await tx.update(orders)
                             .set({
                                 status: 'delivered',
                                 paidAt: new Date(),
                                 deliveredAt: new Date(),
                                 tradeNo: tradeNo,
-                                cardKey: cardKey
+                                cardKey: firstKey,
+                                cardKeys: JSON.stringify(cardKeys)
                             })
                             .where(eq(orders.orderId, orderId));
                         console.log("[Notify] Order delivered successfully!");

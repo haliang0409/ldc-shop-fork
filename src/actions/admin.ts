@@ -30,6 +30,7 @@ export async function saveProduct(formData: FormData) {
     const image = formData.get('image') as string
     const purchaseLimit = formData.get('purchaseLimit') ? parseInt(formData.get('purchaseLimit') as string) : null
     const isHot = formData.get('isHot') === 'on'
+    const singleCardOnly = formData.get('singleCardOnly') === 'on'
 
     const doSave = async () => {
         await db.insert(products).values({
@@ -41,7 +42,8 @@ export async function saveProduct(formData: FormData) {
             category,
             image,
             purchaseLimit,
-            isHot
+            isHot,
+            singleCardOnly
         }).onConflictDoUpdate({
             target: products.id,
             set: {
@@ -52,7 +54,8 @@ export async function saveProduct(formData: FormData) {
                 category,
                 image,
                 purchaseLimit,
-                isHot
+                isHot,
+                singleCardOnly
             }
         })
     }

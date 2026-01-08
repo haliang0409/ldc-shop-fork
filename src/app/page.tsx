@@ -34,6 +34,7 @@ export default async function Home() {
           is_active BOOLEAN DEFAULT TRUE,
           sort_order INTEGER DEFAULT 0,
           purchase_limit INTEGER,
+          single_card_only BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT NOW()
         );
         CREATE TABLE IF NOT EXISTS cards (
@@ -51,6 +52,8 @@ export default async function Home() {
           product_id TEXT NOT NULL,
           product_name TEXT NOT NULL,
           amount DECIMAL(10, 2) NOT NULL,
+          quantity INTEGER DEFAULT 1,
+          card_keys TEXT,
           original_amount DECIMAL(10, 2),
           discount_code TEXT,
           discount_amount DECIMAL(10, 2),
@@ -93,8 +96,11 @@ export default async function Home() {
         ALTER TABLE products ADD COLUMN IF NOT EXISTS purchase_limit INTEGER;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS compare_at_price DECIMAL(10, 2);
         ALTER TABLE products ADD COLUMN IF NOT EXISTS is_hot BOOLEAN DEFAULT FALSE;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS single_card_only BOOLEAN DEFAULT FALSE;
         ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_order_id TEXT;
         ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS card_keys TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS original_amount DECIMAL(10, 2);
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10, 2);
