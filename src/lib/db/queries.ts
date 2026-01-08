@@ -12,6 +12,13 @@ async function ensureProductsColumns() {
 async function ensureOrdersColumns() {
     await db.execute(sql`
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_used INTEGER DEFAULT 0 NOT NULL;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS original_amount DECIMAL(10, 2);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10, 2);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_from DECIMAL(10, 2);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
     `)
 }
 
