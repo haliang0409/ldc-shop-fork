@@ -13,9 +13,24 @@ export function SiteFooter() {
                         {t('footer.disclaimer')}
                     </p>
                 </div>
-                <a href="https://github.com/chatgptuk/ldc-shop" target="_blank" rel="noreferrer" className="text-center text-xs md:text-left text-muted-foreground/60 hover:text-primary transition-colors duration-300">
-                    GitHub: ldc-shop
-                </a>
+                <div className="flex flex-col items-center gap-2 md:flex-row md:gap-4">
+                    <a
+                        href="https://github.com/haliang0409/ldc-shop-fork"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-center text-xs md:text-left text-muted-foreground/60 hover:text-primary transition-colors duration-300"
+                    >
+                        GitHub: ldc-shop-fork
+                    </a>
+                    <a
+                        href="https://www.garyblog.net"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-center text-xs md:text-left text-muted-foreground/60 hover:text-primary transition-colors duration-300"
+                    >
+                        Blog: garyblog.net
+                    </a>
+                </div>
             </div>
         </footer>
     )
