@@ -57,11 +57,27 @@ async function processNotify(params: Record<string, any>) {
                 await db.transaction(async (tx) => {
                     // Delivery can be multi-quantity and/or reusable single-card
                     const qty = (order as any).quantity ? Number((order as any).quantity) : 1
-                    let supportsReservation = true
                     let cardKeys: string[] = []
                     let firstKey: string | undefined
-                    // Check product mode
+
+                    // "Payment QR" / custom payment orders may not be linked to a real product.
+                    // For those, we simply mark the order delivered after successful payment.
                     const productRow = await tx.query.products.findFirst({ where: eq(products.id, order.productId) })
+                    if (!productRow) {
+                        await tx.update(orders)
+                            .set({
+                                status: 'delivered',
+                                paidAt: new Date(),
+                                deliveredAt: new Date(),
+                                tradeNo: tradeNo,
+                                cardKey: null,
+                                cardKeys: JSON.stringify([])
+                            })
+                            .where(eq(orders.orderId, orderId));
+                        console.log("[Notify] Custom payment delivered (no product).");
+                        return
+                    }
+
                     const singleCardOnly = (productRow as any)?.singleCardOnly === true
 
                     try {
@@ -85,7 +101,7 @@ async function processNotify(params: Record<string, any>) {
                             error?.message?.includes('reserved_at') ||
                             errorString.includes('42703')
                         ) {
-                            supportsReservation = false;
+                            // Reservation columns missing; we will fall back to claiming free cards.
                         } else {
                             throw error;
                         }
@@ -117,7 +133,7 @@ async function processNotify(params: Record<string, any>) {
                                     SELECT id FROM cards
                                     WHERE product_id = ${order.productId}
                                       AND COALESCE(is_used, false) = false
-                                      AND (reserved_at IS NULL OR reserved_at < NOW() - INTERVAL '1 minute')
+                                      AND (reserved_at IS NULL OR reserved_at < NOW() - INTERVAL '5 minutes')
                                     LIMIT ${needed}
                                     FOR UPDATE SKIP LOCKED
                                 )

@@ -1,6 +1,10 @@
 import { getActiveProducts, getCategories, getProductRating, getVisitorCount } from "@/lib/db/queries";
 import { getActiveAnnouncement } from "@/actions/settings";
 import { HomeContent } from "@/components/home-content";
+import { cookies } from "next/headers";
+import { db } from "@/lib/db";
+import { orders } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +91,8 @@ export default async function Home() {
         CREATE TABLE IF NOT EXISTS login_users (
           user_id TEXT PRIMARY KEY,
           username TEXT,
+          points INTEGER DEFAULT 0 NOT NULL,
+          is_banned BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMP DEFAULT NOW(),
           last_login_at TIMESTAMP DEFAULT NOW()
         );
@@ -108,6 +114,8 @@ export default async function Home() {
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+        ALTER TABLE login_users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0 NOT NULL;
+        ALTER TABLE login_users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE;
         ALTER TABLE cards ALTER COLUMN is_used SET DEFAULT FALSE;
         UPDATE cards SET is_used = FALSE WHERE is_used IS NULL;
         CREATE UNIQUE INDEX IF NOT EXISTS cards_product_id_card_key_uq ON cards(product_id, card_key);
@@ -162,6 +170,21 @@ export default async function Home() {
 
   const announcement = await getActiveAnnouncement();
 
+  // Pending payment reminder (best effort)
+  let pendingOrder: { orderId: string; productName: string; amount: string } | null = null
+  try {
+    const cookieStore = await cookies()
+    const pendingOrderId = cookieStore.get('ldc_pending_order')?.value
+    if (pendingOrderId) {
+      const o = await db.query.orders.findFirst({ where: eq(orders.orderId, pendingOrderId) })
+      if (o && (o.status || 'pending') === 'pending') {
+        pendingOrder = { orderId: o.orderId, productName: o.productName, amount: o.amount }
+      }
+    }
+  } catch {
+    pendingOrder = null
+  }
+
   // Fetch ratings for each product
   const productsWithRatings = await Promise.all(
     products.map(async (p) => {
@@ -174,6 +197,8 @@ export default async function Home() {
       return {
         ...p,
         stockCount: p.stock,
+        totalStockCount: (p as any).totalStock ?? p.stock,
+        lockedStockCount: Math.max(0, Number((p as any).totalStock ?? p.stock) - Number(p.stock)),
         soldCount: p.sold || 0,
         rating: rating.average,
         reviewCount: rating.count
@@ -198,6 +223,7 @@ export default async function Home() {
   return <HomeContent
     products={productsWithRatings}
     announcement={announcement}
+    pendingOrder={pendingOrder}
     visitorCount={visitorCount}
     categories={categories}
   />;

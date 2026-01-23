@@ -20,6 +20,8 @@ interface Product {
     image: string | null
     category: string | null
     stockCount: number
+    totalStockCount?: number
+    lockedStockCount?: number
     soldCount: number
     isHot?: boolean | null
     rating?: number
@@ -29,11 +31,12 @@ interface Product {
 interface HomeContentProps {
     products: Product[]
     announcement?: string | null
+    pendingOrder?: { orderId: string; productName: string; amount: string } | null
     visitorCount?: number
     categories?: Array<{ name: string; icon: string | null; sortOrder: number }>
 }
 
-export function HomeContent({ products, announcement, visitorCount, categories: categoryConfig }: HomeContentProps) {
+export function HomeContent({ products, announcement, pendingOrder, visitorCount, categories: categoryConfig }: HomeContentProps) {
     const { t } = useI18n()
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState("")
@@ -76,7 +79,7 @@ export function HomeContent({ products, announcement, visitorCount, categories: 
                 sorted.sort((a, b) => Number(b.price) - Number(a.price))
                 break
             case 'stockDesc':
-                sorted.sort((a, b) => (b.stockCount || 0) - (a.stockCount || 0))
+                sorted.sort((a, b) => (b.totalStockCount ?? b.stockCount ?? 0) - (a.totalStockCount ?? a.stockCount ?? 0))
                 break
             case 'soldDesc':
                 sorted.sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
@@ -90,6 +93,28 @@ export function HomeContent({ products, announcement, visitorCount, categories: 
 
     return (
         <main className="container py-8 md:py-16">
+
+            {/* Pending payment reminder */}
+            {pendingOrder && (
+                <section className="mb-6">
+                    <div className="relative overflow-hidden rounded-xl border border-yellow-500/20 bg-gradient-to-r from-yellow-500/5 via-yellow-500/10 to-yellow-500/5 p-4">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-yellow-500 to-yellow-500/50" />
+                        <div className="flex items-start justify-between gap-4 pl-3">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-foreground/90">{t('home.pendingOrderTitle')}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {t('home.pendingOrderDesc', { id: pendingOrder.orderId })}
+                                </p>
+                            </div>
+                            <Link href={`/order/${pendingOrder.orderId}`} className="shrink-0">
+                                <Button size="sm" variant="outline">
+                                    {t('home.pendingOrderAction')}
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Announcement Banner */}
             {announcement && (
@@ -296,11 +321,34 @@ export function HomeContent({ products, announcement, visitorCount, categories: 
                                                 <Badge variant="outline" className="text-[10px] h-5 px-1.5 text-muted-foreground border-border/50 whitespace-nowrap">
                                                     {t('common.sold')} {product.soldCount}
                                                 </Badge>
+                                                {(() => {
+                                                    const total = product.totalStockCount ?? product.stockCount
+                                                    const locked = product.lockedStockCount ?? Math.max(0, total - (product.stockCount || 0))
+                                                    if (total <= 0) {
+                                                        return (
+                                                            <Badge variant="destructive" className="text-[10px] h-5 px-1.5 whitespace-nowrap">
+                                                                {t('common.outOfStock')}
+                                                            </Badge>
+                                                        )
+                                                    }
+                                                    return (
+                                                        <>
+                                                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 whitespace-nowrap">
+                                                                {t('common.stock')} {total}
+                                                            </Badge>
+                                                            {locked > 0 && (
+                                                                <Badge variant="outline" className="text-[10px] h-5 px-1.5 whitespace-nowrap text-muted-foreground border-border/50">
+                                                                    {t('common.locked')} {locked}
+                                                                </Badge>
+                                                            )}
+                                                        </>
+                                                    )
+                                                })()}
                                                 <Badge
                                                     variant={product.stockCount > 0 ? "secondary" : "destructive"}
                                                     className="text-[10px] h-5 px-1.5 whitespace-nowrap"
                                                 >
-                                                    {product.stockCount > 0 ? `${t('common.stock')} ${product.stockCount}` : t('common.outOfStock')}
+                                                    {product.stockCount > 0 ? `${t('common.available')} ${product.stockCount}` : t('common.availableZero')}
                                                 </Badge>
                                             </div>
                                             <Link href={`/buy/${product.id}`} className="w-full">

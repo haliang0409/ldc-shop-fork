@@ -47,10 +47,11 @@ export default async function SearchPage({
         category: p.category,
         isHot: p.isHot ?? false,
         stockCount: p.stock,
+        totalStockCount: (p as any).totalStock ?? p.stock,
+        lockedStockCount: Math.max(0, Number((p as any).totalStock ?? p.stock) - Number(p.stock)),
         soldCount: p.sold || 0
       }))}
       categories={categories.map(c => ({ name: c.name, icon: c.icon, sortOrder: c.sortOrder }))}
     />
   )
 }
-

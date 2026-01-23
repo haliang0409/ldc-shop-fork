@@ -24,6 +24,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
     ],
     callbacks: {
+        async signIn({ profile }) {
+            // Best-effort ban check. If DB isn't ready, allow sign-in.
+            try {
+                const userId = profile ? String((profile as any).id) : ''
+                if (!userId) return true
+                const { isUserBanned } = await import("@/lib/db/queries")
+                if (await isUserBanned(userId)) return false
+            } catch {
+                // ignore
+            }
+            return true
+        },
         async jwt({ token, user, profile }) {
             if (profile) {
                 token.id = String(profile.id)

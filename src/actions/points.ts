@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { dailyCheckins, loginUsers } from "@/lib/db/schema"
-import { getSetting } from "@/lib/db/queries"
+import { getSetting, isUserBanned } from "@/lib/db/queries"
 import { eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
@@ -11,6 +11,12 @@ export async function checkIn() {
     const session = await auth()
     if (!session?.user?.id) {
         return { success: false, error: "Not logged in" }
+    }
+
+    try {
+        if (await isUserBanned(session.user.id)) return { success: false, error: "banned" }
+    } catch {
+        // best effort
     }
 
     // 0. Check if feature is enabled
@@ -77,6 +83,11 @@ function isMissingTable(error: any) {
 export async function getUserPoints() {
     const session = await auth()
     if (!session?.user?.id) return 0
+    try {
+        if (await isUserBanned(session.user.id)) return 0
+    } catch {
+        // best effort
+    }
 
     const user = await db.query.loginUsers.findFirst({
         where: eq(loginUsers.userId, session.user.id),
@@ -89,6 +100,11 @@ export async function getUserPoints() {
 export async function getCheckinStatus() {
     const session = await auth()
     if (!session?.user?.id) return { checkedIn: false }
+    try {
+        if (await isUserBanned(session.user.id)) return { checkedIn: true, disabled: true }
+    } catch {
+        // best effort
+    }
 
     const enabledStr = await getSetting('checkin_enabled')
     if (enabledStr === 'false') {

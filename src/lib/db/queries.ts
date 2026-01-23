@@ -65,7 +65,10 @@ export async function getProducts() {
             sortOrder: products.sortOrder,
             purchaseLimit: products.purchaseLimit,
                 singleCardOnly: products.singleCardOnly,
-            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute') then 1 end):: int`,
+            // Available stock excludes cards reserved within the payment window.
+            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes') then 1 end):: int`,
+            // Total stock includes reserved cards so users don't mistake temporary locks as "sold out".
+            totalStock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`,
             sold: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = true then 1 end):: int`
         })
             .from(products)
@@ -89,7 +92,8 @@ export async function getActiveProducts() {
             isHot: products.isHot,
                 purchaseLimit: products.purchaseLimit,
                 singleCardOnly: products.singleCardOnly,
-            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute') then 1 end):: int`,
+            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes') then 1 end):: int`,
+            totalStock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`,
             sold: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = true then 1 end):: int`
         })
             .from(products)
@@ -113,7 +117,8 @@ export async function getProduct(id: string) {
             isHot: products.isHot,
             purchaseLimit: products.purchaseLimit,
                 singleCardOnly: products.singleCardOnly,
-            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute') then 1 end):: int`
+            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes') then 1 end):: int`,
+            totalStock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`
         })
             .from(products)
             .leftJoin(cards, eq(products.id, cards.productId))
@@ -273,7 +278,8 @@ export async function searchActiveProducts(params: {
             isHot: products.isHot,
             purchaseLimit: products.purchaseLimit,
                 singleCardOnly: products.singleCardOnly,
-            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute') then 1 end):: int`,
+            stock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes') then 1 end):: int`,
+            totalStock: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = false then 1 end):: int`,
             sold: sql<number>`count(case when COALESCE(${cards.isUsed}, false) = true then 1 end):: int`
         })
             .from(products)
@@ -408,13 +414,16 @@ function isMissingTableOrColumn(error: any) {
 async function ensureLoginUsersTable() {
     await db.execute(sql`
         CREATE TABLE IF NOT EXISTS login_users(
-        user_id TEXT PRIMARY KEY,
-        username TEXT,
-        points INTEGER DEFAULT 0 NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        last_login_at TIMESTAMP DEFAULT NOW()
-    )
-        `);
+            user_id TEXT PRIMARY KEY,
+            username TEXT,
+            points INTEGER DEFAULT 0 NOT NULL,
+            is_banned BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            last_login_at TIMESTAMP DEFAULT NOW()
+        );
+        ALTER TABLE login_users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0 NOT NULL;
+        ALTER TABLE login_users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE;
+    `);
 }
 
 async function ensureSettingsTable() {
@@ -501,6 +510,11 @@ export async function recordLoginUser(userId: string, username?: string | null) 
             // Ensure points column exists for existing tables
             try {
                 await db.execute(sql`ALTER TABLE login_users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0 NOT NULL; `);
+            } catch {
+                // Ignore if it fails (e.g. column exists)
+            }
+            try {
+                await db.execute(sql`ALTER TABLE login_users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE; `);
             } catch {
                 // Ignore if it fails (e.g. column exists)
             }
@@ -605,6 +619,7 @@ export async function getUsers(page = 1, pageSize = 20, q = '') {
             userId: loginUsers.userId,
             username: loginUsers.username,
             points: loginUsers.points,
+            isBanned: sql<boolean>`COALESCE(${loginUsers.isBanned}, false)`,
             lastLoginAt: loginUsers.lastLoginAt,
             createdAt: loginUsers.createdAt,
             orderCount: sql<number>`count(CASE WHEN ${orders.status} IN ('paid', 'delivered', 'refunded') THEN 1 END)::int`
@@ -642,4 +657,27 @@ export async function updateUserPoints(userId: string, points: number) {
     await db.update(loginUsers)
         .set({ points })
         .where(eq(loginUsers.userId, userId));
+}
+
+export async function isUserBanned(userId: string): Promise<boolean> {
+    if (!userId) return false
+    await ensureLoginUsersTable()
+    const row = await db.query.loginUsers.findFirst({
+        where: eq(loginUsers.userId, userId),
+        columns: { isBanned: true }
+    })
+    return !!row?.isBanned
+}
+
+export async function setUserBanned(userId: string, banned: boolean): Promise<void> {
+    if (!userId) return
+    await ensureLoginUsersTable()
+    await db.insert(loginUsers).values({
+        userId,
+        isBanned: banned,
+        lastLoginAt: new Date(),
+    }).onConflictDoUpdate({
+        target: loginUsers.userId,
+        set: { isBanned: banned, lastLoginAt: new Date() }
+    })
 }

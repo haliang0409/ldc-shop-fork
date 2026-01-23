@@ -122,6 +122,8 @@ export default async function BuyPage({ params }: BuyPageProps) {
                 CREATE TABLE IF NOT EXISTS login_users (
                     user_id TEXT PRIMARY KEY,
                     username TEXT,
+                    points INTEGER DEFAULT 0 NOT NULL,
+                    is_banned BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT NOW(),
                     last_login_at TIMESTAMP DEFAULT NOW()
                 );
@@ -142,6 +144,8 @@ export default async function BuyPage({ params }: BuyPageProps) {
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+                ALTER TABLE login_users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0 NOT NULL;
+                ALTER TABLE login_users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE;
                 CREATE TABLE IF NOT EXISTS settings (
                     key TEXT PRIMARY KEY,
                     value TEXT,
@@ -189,13 +193,13 @@ export default async function BuyPage({ params }: BuyPageProps) {
         notFound()
     }
 
-    // Get stock count (exclude reserved cards)
+    // Get stock count (exclude cards reserved within the payment window)
     let stockCount = 0
     try {
         const stockResult = await db
             .select({ count: sql<number>`count(*)::int` })
             .from(cards)
-            .where(sql`${cards.productId} = ${id} AND ${cards.isUsed} = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute')`)
+            .where(sql`${cards.productId} = ${id} AND ${cards.isUsed} = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes')`)
 
         stockCount = stockResult[0]?.count || 0
     } catch (error: any) {
@@ -227,7 +231,7 @@ export default async function BuyPage({ params }: BuyPageProps) {
         const stockResult = await db
             .select({ count: sql<number>`count(*)::int` })
             .from(cards)
-            .where(sql`${cards.productId} = ${id} AND ${cards.isUsed} = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute')`)
+            .where(sql`${cards.productId} = ${id} AND ${cards.isUsed} = false AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes')`)
 
         stockCount = stockResult[0]?.count || 0
     }

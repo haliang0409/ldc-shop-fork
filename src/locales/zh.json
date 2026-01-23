@@ -31,6 +31,9 @@
         "inStock": "有货",
         "outOfStock": "缺货",
         "stock": "库存",
+        "available": "可用",
+        "availableZero": "可用 0",
+        "locked": "锁定",
         "sold": "已售",
         "buyNow": "立即购买",
         "processing": "处理中...",
@@ -52,6 +55,9 @@
         "noProducts": "暂无商品",
         "checkBackLater": "请稍后再来！",
         "visitorCount": "累计顾客数：{{count}}",
+        "pendingOrderTitle": "你有一笔待支付订单",
+        "pendingOrderDesc": "订单号：{{id}}",
+        "pendingOrderAction": "去支付",
         "sort": {
             "title": "排序",
             "default": "默认",
@@ -273,9 +279,16 @@
             "userId": "用户ID",
             "points": "积分",
             "orders": "订单数",
+            "status": "状态",
+            "active": "正常",
+            "banned": "已拉黑",
             "lastLogin": "最后登录",
             "createdAt": "注册时间",
             "editPoints": "修改积分",
+            "ban": "拉黑",
+            "unban": "解封",
+            "banConfirm": "确认拉黑该用户？拉黑后将禁止登录与购买。",
+            "unbanConfirm": "确认解封该用户？",
             "save": "保存",
             "search": "搜索用户...",
             "currentPoints": "当前积分",
@@ -416,11 +429,33 @@
         "invalidRating": "请选择评分。",
         "leaveReview": "发表评价"
     },
+    "paymentQr": {
+        "title": "收款码",
+        "create": "创建收款请求",
+        "name": "标题",
+        "namePlaceholder": "例如：赞助 / 自定义收款",
+        "amount": "金额",
+        "generate": "生成链接与二维码",
+        "result": "收款链接",
+        "shareUrl": "分享链接",
+        "qrAlt": "收款二维码",
+        "tip": "将链接/二维码分享给付款方即可收款。未支付订单将在 5 分钟后自动取消。",
+        "open": "打开收款页",
+        "nameRequired": "标题不能为空",
+        "amountInvalid": "金额不合法",
+        "payTitle": "支付",
+        "payNow": "立即支付",
+        "paidHint": "该收款已完成。"
+    },
     "checkin": {
         "button": "签到",
         "success": "签到成功！+{{points}} 积分",
         "alreadyCheckedIn": "今天已签到",
+        "banned": "账号已被拉黑",
         "failed": "签到失败",
         "networkError": "网络错误"
+    },
+    "auth": {
+        "banned": "账号已被拉黑"
     }
 }

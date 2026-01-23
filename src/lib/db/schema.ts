@@ -77,6 +77,7 @@ export const loginUsers = pgTable('login_users', {
     userId: text('user_id').primaryKey(),
     username: text('username'),
     points: integer('points').default(0).notNull(),
+    isBanned: boolean('is_banned').default(false),
     createdAt: timestamp('created_at').defaultNow(),
     lastLoginAt: timestamp('last_login_at').defaultNow(),
 });

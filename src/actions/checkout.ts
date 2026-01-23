@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { products, cards, orders, loginUsers } from "@/lib/db/schema"
-import { cancelExpiredOrders } from "@/lib/db/queries"
+import { cancelExpiredOrders, isUserBanned } from "@/lib/db/queries"
 import { generateOrderId, generateSign } from "@/lib/crypto"
 import { eq, sql, and, or } from "drizzle-orm"
 import { cookies } from "next/headers"
@@ -32,6 +32,13 @@ function round2(n: number) {
 export async function createOrder(productId: string, email?: string, usePoints: boolean = false, discountCode?: string, quantityRaw?: number) {
     const session = await auth()
     const user = session?.user
+    if (user?.id) {
+        try {
+            if (await isUserBanned(user.id)) return { success: false, error: 'auth.banned' }
+        } catch {
+            // best effort
+        }
+    }
 
     // 1. Get Product
     const product = await db.query.products.findFirst({
@@ -111,7 +118,7 @@ export async function createOrder(productId: string, email?: string, usePoints: 
             .where(sql`
                 ${cards.productId} = ${productId}
                 AND (COALESCE(${cards.isUsed}, false) = false)
-                AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '1 minute')
+                AND (${cards.reservedAt} IS NULL OR ${cards.reservedAt} < NOW() - INTERVAL '5 minutes')
             `)
         return result[0]?.count || 0
     }
@@ -192,7 +199,7 @@ export async function createOrder(productId: string, email?: string, usePoints: 
         }
     }
 
-    // 4. Create Order + Reserve Stock (1 minute) OR Deliver Immediately
+    // 4. Create Order + Reserve Stock (5 minutes) OR Deliver Immediately
     const orderId = generateOrderId()
 
     const reserveAndCreate = async () => {
@@ -218,9 +225,9 @@ export async function createOrder(productId: string, email?: string, usePoints: 
                     WHERE id IN (
                         SELECT id
                         FROM cards
-                        WHERE product_id = ${productId}
-                          AND COALESCE(is_used, false) = false
-                          AND (reserved_at IS NULL OR reserved_at < NOW() - INTERVAL '1 minute')
+                                    WHERE product_id = ${productId}
+                                      AND COALESCE(is_used, false) = false
+                                      AND (reserved_at IS NULL OR reserved_at < NOW() - INTERVAL '5 minutes')
                         LIMIT ${quantity}
                         FOR UPDATE SKIP LOCKED
                     )
@@ -388,6 +395,13 @@ export async function createPaymentForOrder(orderIdRaw: string) {
 
     const session = await auth()
     const user = session?.user
+    if (user?.id) {
+        try {
+            if (await isUserBanned(user.id)) return { success: false, error: 'auth.banned' }
+        } catch {
+            // best effort
+        }
+    }
 
     const order = await db.query.orders.findFirst({ where: eq(orders.orderId, orderId) })
     if (!order) return { success: false, error: 'common.error' }

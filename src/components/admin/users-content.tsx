@@ -9,13 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { saveUserPoints } from "@/actions/admin-users"
+import { saveUserPoints, setBanStatus } from "@/actions/admin-users"
 import { Loader2, Search, ArrowLeft, ArrowRight, Edit } from "lucide-react"
 
 interface User {
     userId: string
     username: string | null
     points: number
+    isBanned?: boolean
     lastLoginAt: Date | null
     createdAt: Date | null
     orderCount: number
@@ -120,6 +121,7 @@ export function UsersContent({ data }: UsersContentProps) {
                             <TableHead>{t('admin.users.username')}</TableHead>
                             <TableHead>{t('admin.users.points')}</TableHead>
                             <TableHead>{t('admin.users.orders')}</TableHead>
+                            <TableHead>{t('admin.users.status')}</TableHead>
                             <TableHead>{t('admin.users.lastLogin')}</TableHead>
                             <TableHead>{t('admin.users.createdAt')}</TableHead>
                             <TableHead className="text-right">{t('common.actions')}</TableHead>
@@ -139,6 +141,13 @@ export function UsersContent({ data }: UsersContentProps) {
                                     <TableCell>{user.username || '-'}</TableCell>
                                     <TableCell className="font-bold">{user.points}</TableCell>
                                     <TableCell>{user.orderCount}</TableCell>
+                                    <TableCell>
+                                        {user.isBanned ? (
+                                            <span className="text-xs font-medium text-red-600">{t('admin.users.banned')}</span>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">{t('admin.users.active')}</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="text-muted-foreground text-xs">
                                         {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : '-'}
                                     </TableCell>
@@ -146,14 +155,34 @@ export function UsersContent({ data }: UsersContentProps) {
                                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => openEditDialog(user)}
-                                        >
-                                            <Edit className="h-4 w-4 mr-2" />
-                                            {t('admin.users.editPoints')}
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openEditDialog(user)}
+                                            >
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                {t('admin.users.editPoints')}
+                                            </Button>
+                                            <Button
+                                                variant={user.isBanned ? "secondary" : "destructive"}
+                                                size="sm"
+                                                onClick={async () => {
+                                                    const next = !user.isBanned
+                                                    const msg = next ? t('admin.users.banConfirm') : t('admin.users.unbanConfirm')
+                                                    if (!confirm(msg)) return
+                                                    try {
+                                                        await setBanStatus(user.userId, next)
+                                                        toast.success(t('common.success'))
+                                                        router.refresh()
+                                                    } catch (e: any) {
+                                                        toast.error(e.message || t('common.error'))
+                                                    }
+                                                }}
+                                            >
+                                                {user.isBanned ? t('admin.users.unban') : t('admin.users.ban')}
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

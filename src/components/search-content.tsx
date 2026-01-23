@@ -22,6 +22,8 @@ type Product = {
   category: string | null
   isHot: boolean
   stockCount: number
+  totalStockCount?: number
+  lockedStockCount?: number
   soldCount: number
 }
 
@@ -169,12 +171,35 @@ export function SearchContent(props: {
                     <Badge variant="outline" className="text-[10px] h-5 px-1.5 text-muted-foreground border-border/50 whitespace-nowrap">
                       {t('common.sold')} {product.soldCount}
                     </Badge>
-                    <Badge
-                      variant={product.stockCount > 0 ? "secondary" : "destructive"}
-                      className={cn("text-[10px] h-5 px-1.5 whitespace-nowrap", product.stockCount > 0 ? "" : "")}
-                    >
-                      {product.stockCount > 0 ? `${t('common.stock')} ${product.stockCount}` : t('common.outOfStock')}
-                    </Badge>
+                    {(() => {
+                      const total = product.totalStockCount ?? product.stockCount
+                      const locked = product.lockedStockCount ?? Math.max(0, total - (product.stockCount || 0))
+                      if (total <= 0) {
+                        return (
+                          <Badge variant="destructive" className="text-[10px] h-5 px-1.5 whitespace-nowrap">
+                            {t('common.outOfStock')}
+                          </Badge>
+                        )
+                      }
+                      return (
+                        <>
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5 whitespace-nowrap">
+                            {t('common.stock')} {total}
+                          </Badge>
+                          {locked > 0 && (
+                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 whitespace-nowrap text-muted-foreground border-border/50">
+                              {t('common.locked')} {locked}
+                            </Badge>
+                          )}
+                          <Badge
+                            variant={product.stockCount > 0 ? "secondary" : "destructive"}
+                            className={cn("text-[10px] h-5 px-1.5 whitespace-nowrap", product.stockCount > 0 ? "" : "")}
+                          >
+                            {product.stockCount > 0 ? `${t('common.available')} ${product.stockCount}` : t('common.availableZero')}
+                          </Badge>
+                        </>
+                      )
+                    })()}
                   </div>
                   <Link href={`/buy/${product.id}`} className="w-full">
                     <Button size="sm" className="w-full bg-foreground text-background hover:bg-foreground/90 whitespace-nowrap shadow-md hover:shadow-lg transition-all">
@@ -212,4 +237,3 @@ export function SearchContent(props: {
     </main>
   )
 }
-

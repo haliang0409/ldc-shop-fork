@@ -70,6 +70,8 @@ export async function GET() {
             CREATE TABLE IF NOT EXISTS login_users (
                 user_id TEXT PRIMARY KEY,
                 username TEXT,
+                points INTEGER DEFAULT 0 NOT NULL,
+                is_banned BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT NOW(),
                 last_login_at TIMESTAMP DEFAULT NOW()
             );
@@ -90,6 +92,8 @@ export async function GET() {
             ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
             ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
             ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+            ALTER TABLE login_users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0 NOT NULL;
+            ALTER TABLE login_users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE;
         `);
 
         return NextResponse.json({ success: true, message: "Database initialized successfully" });

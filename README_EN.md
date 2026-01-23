@@ -20,13 +20,18 @@ A robust, serverless virtual goods shop built with **Next.js 16**, **Vercel Post
     - ⭐ **Ratings & Reviews**: Verified buyers can rate and review.
     - 📦 **Stock & Sold Counters**: Real-time inventory and sales display.
     - 🚫 **Purchase Limits**: Limit purchases by paid order count.
+    - 🔢 **Quantity Selector**: Buy multiple items (limited by stock and purchase limit).
+    - 🏷️ **Store Name**: Editable in admin and reflected in header/title.
 - **Orders & Delivery**:
     - ✅ **Payment Callback Verification**: Signature and amount checks.
     - 🎁 **Auto Delivery**: Card key delivery on payment; paid status retained if out of stock.
-    - 🔒 **Stock Reservation**: 1-minute hold after entering checkout to prevent oversell.
+    - 📦 **Multi-Key Delivery**: Multiple items show multiple card keys in order details.
+    - 🔒 **Stock Reservation**: 5-minute hold after entering checkout to prevent oversell.
     - ⏱️ **Auto-Cancel**: Unpaid orders are cancelled after 5 minutes and stock is released.
     - 🧾 **Order Center**: Order list and details pages.
-    - 🔄 **Refund Requests**: Users can submit refund requests for admin review.
+    - 🔔 **Pending Payment Reminder**: Homepage banner reminds users about unpaid orders.
+    - 🔄 **Refund Requests**: Users can submit refund requests for admin review (client refund + optional server proxy).
+    - 💳 **Payment QR**: Admin can generate a payment link/QR without a product.
 - **Admin Console**:
     - 📊 **Sales Stats**: Today/week/month/total overview.
     - ⚠️ **Low Stock Alerts**: Configurable threshold and warnings.
@@ -34,12 +39,15 @@ A robust, serverless virtual goods shop built with **Next.js 16**, **Vercel Post
     - 🏷️ **Category Management**: CRUD categories with icons and ordering.
     - 🗂️ **Card Inventory**: Bulk import (newline/comma) with de-duplication and delete unused card keys.
     - 🧯 **Stock Self-Heal**: Handles legacy `is_used = NULL` that can cause false out-of-stock, and backfills it to `false`.
+    - 📦 **Total Stock Display**: Homepage can show total stock including locked reservations.
     - 💳 **Orders & Refunds**: Pagination/search/filters, order detail, mark paid/delivered/cancel, client-mode refund + optional server proxy.
     - 🧹 **Order Cleanup**: Bulk select and bulk delete.
     - ⭐ **Review Management**: Search and delete reviews.
     - 📦 **Data Export**: Export orders/products/reviews/settings; full dump JSON + D1 SQL.
     - 📣 **Announcements**: Homepage announcement management.
     - 🏷️ **Store Name**: Editable in admin and reflected in header/title.
+    - 🚫 **Ban/Unban Customers**: Block specific users from signing in and purchasing.
+- **Auto Update (Upstream Sync)**: GitHub Actions workflow to sync upstream changes for forks (and trigger deploy after merge/push).
 - **I18n & Theme**:
     - 🌐 **English/Chinese switcher**.
     - 🌓 **Light/Dark/System themes**.
