@@ -432,6 +432,7 @@
     "paymentQr": {
         "title": "Payment QR",
         "create": "Create a payment request",
+        "manage": "Manage payment requests",
         "name": "Title",
         "namePlaceholder": "e.g. Donation / Custom payment",
         "amount": "Amount",
@@ -445,7 +446,13 @@
         "amountInvalid": "Invalid amount",
         "payTitle": "Pay",
         "payNow": "Pay now",
-        "paidHint": "This payment is completed."
+        "paidHint": "This payment is completed.",
+        "searchPlaceholder": "Search by order id or title...",
+        "orderId": "Order ID",
+        "noItems": "No payment requests",
+        "cancel": "Cancel",
+        "cancelConfirm": "Cancel this payment request?",
+        "deleteConfirm": "Delete this payment request? This is irreversible."
     },
     "checkin": {
         "button": "Check In",

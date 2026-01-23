@@ -4,6 +4,8 @@ import { checkAdmin } from "@/actions/admin"
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
 import { generateOrderId, generateSign } from "@/lib/crypto"
+import { eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 function round2(n: number) {
   return Math.round((n + Number.EPSILON) * 100) / 100
@@ -57,3 +59,25 @@ export async function createPaymentQrOrder(params: { name: string; amount: numbe
   }
 }
 
+export async function cancelPaymentQrOrder(orderId: string) {
+  await checkAdmin()
+  const id = String(orderId || '').trim()
+  if (!id) return { ok: false as const, error: 'common.error' }
+
+  await db.update(orders)
+    .set({ status: 'cancelled' })
+    .where(eq(orders.orderId, id))
+
+  revalidatePath('/admin/payment-qr')
+  return { ok: true as const }
+}
+
+export async function deletePaymentQrOrder(orderId: string) {
+  await checkAdmin()
+  const id = String(orderId || '').trim()
+  if (!id) return { ok: false as const, error: 'common.error' }
+
+  await db.delete(orders).where(eq(orders.orderId, id))
+  revalidatePath('/admin/payment-qr')
+  return { ok: true as const }
+}

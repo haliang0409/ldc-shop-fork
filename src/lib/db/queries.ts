@@ -681,3 +681,50 @@ export async function setUserBanned(userId: string, banned: boolean): Promise<vo
         set: { isBanned: banned, lastLoginAt: new Date() }
     })
 }
+
+export async function getPaymentQrOrders(params: {
+    page?: number
+    pageSize?: number
+    q?: string
+    status?: string
+}) {
+    const page = params.page && params.page > 0 ? params.page : 1
+    const pageSize = Math.min(params.pageSize && params.pageSize > 0 ? params.pageSize : 20, 100)
+    const offset = (page - 1) * pageSize
+    const q = (params.q || '').trim()
+    const status = (params.status || 'all').trim()
+
+    const whereParts: any[] = [eq(orders.productId, '__PAYMENT__')]
+    if (status && status !== 'all') whereParts.push(eq(orders.status, status))
+    if (q) {
+        const like = `%${q}%`
+        whereParts.push(or(
+            sql`${orders.orderId} ILIKE ${like}`,
+            sql`${orders.productName} ILIKE ${like}`
+        ))
+    }
+
+    const whereExpr = and(...whereParts)
+
+    const itemsPromise = db.select({
+        orderId: orders.orderId,
+        name: orders.productName,
+        amount: orders.amount,
+        status: orders.status,
+        createdAt: orders.createdAt,
+        paidAt: orders.paidAt,
+        deliveredAt: orders.deliveredAt,
+    })
+        .from(orders)
+        .where(whereExpr)
+        .orderBy(desc(orders.createdAt))
+        .limit(pageSize)
+        .offset(offset)
+
+    const countPromise = db.select({ count: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(whereExpr)
+
+    const [items, totalRes] = await Promise.all([itemsPromise, countPromise])
+    return { items, total: totalRes[0]?.count || 0, page, pageSize, q, status }
+}
