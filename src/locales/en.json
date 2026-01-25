@@ -96,7 +96,9 @@
             "proceedPayment": "Proceed to Payment",
             "quantity": "Quantity",
             "maxQuantity": "Max: {{max}}",
-            "reusableKeyHint": "Reusable single key"
+            "reusableKeyHint": "Reusable single key",
+            "note": "Order note",
+            "notePlaceholder": "Optional. For the seller, e.g. account/requirements..."
         },
         "paymentSuccessPoints": "Payment successful using points!"
     },
@@ -146,6 +148,7 @@
         "clickToCopy": "Click to copy:",
         "saveKeySecurely": "Please save this key securely.",
         "quantityLabel": "Quantity: {{qty}}",
+        "note": "Order note",
         "loginToView": "Please login with the account used to purchase to view the content.",
         "waitingPayment": "Waiting for payment...",
         "payNow": "Pay Now",
@@ -337,6 +340,7 @@
             "detail": "Details",
             "email": "Email",
             "emailPlaceholder": "Optional email",
+            "note": "Order note",
             "createdAt": "Created At",
             "paidAt": "Paid At",
             "deliveredAt": "Delivered At",

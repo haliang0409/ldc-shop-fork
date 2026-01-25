@@ -18,6 +18,7 @@ async function ensureOrdersPromoColumns() {
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_by TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_reason TEXT;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS note TEXT;
     `)
 }
 
@@ -29,7 +30,14 @@ function round2(n: number) {
     return Math.round((n + Number.EPSILON) * 100) / 100
 }
 
-export async function createOrder(productId: string, email?: string, usePoints: boolean = false, discountCode?: string, quantityRaw?: number) {
+export async function createOrder(
+    productId: string,
+    email?: string,
+    usePoints: boolean = false,
+    discountCode?: string,
+    quantityRaw?: number,
+    noteRaw?: string
+) {
     const session = await auth()
     const user = session?.user
     if (user?.id) {
@@ -97,6 +105,12 @@ export async function createOrder(productId: string, email?: string, usePoints: 
     }
 
     const isZeroPrice = finalAmount <= 0
+
+    const note = (() => {
+        const s = String(noteRaw ?? '').trim()
+        if (!s) return null
+        return s.slice(0, 500)
+    })()
 
     const ensureCardsReservationColumns = async () => {
         await db.execute(sql`
@@ -284,6 +298,7 @@ export async function createOrder(productId: string, email?: string, usePoints: 
                     username: user?.username || null,
                     status: 'delivered',
                     quantity: quantity,
+                    note,
                     cardKey: firstKey,
                     cardKeys: JSON.stringify(cardKeys),
                     paidAt: new Date(),
@@ -307,6 +322,7 @@ export async function createOrder(productId: string, email?: string, usePoints: 
                     username: user?.username || null,
                     status: 'pending',
                     quantity: quantity,
+                    note,
                     pointsUsed: pointsToUse
                 })
             }

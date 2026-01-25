@@ -204,6 +204,17 @@ export function AdminOrderDetailContent({ order }: { order: any }) {
               </div>
             </div>
 
+            <div className="space-y-1 md:col-span-2">
+              <div className="text-sm text-muted-foreground">{t('admin.orders.note')}</div>
+              {order.note ? (
+                <div className="whitespace-pre-wrap break-words rounded-md border bg-muted/30 p-3 text-sm">
+                  {order.note}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">-</div>
+              )}
+            </div>
+
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground">{t('admin.orders.tradeNo')}</div>
               {order.tradeNo ? <CopyButton text={order.tradeNo} /> : <div className="text-muted-foreground">-</div>}

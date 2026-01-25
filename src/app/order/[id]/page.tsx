@@ -57,6 +57,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 cardKey: order.cardKey,
                 cardKeys: order.cardKeys || null,
                 quantity: (order as any).quantity || 1,
+                note: (order as any).note || null,
                 createdAt: order.createdAt,
                 paidAt: order.paidAt
             }}

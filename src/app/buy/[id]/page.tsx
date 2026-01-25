@@ -88,6 +88,7 @@ export default async function BuyPage({ params }: BuyPageProps) {
                     product_name TEXT NOT NULL,
                     amount DECIMAL(10, 2) NOT NULL,
                     quantity INTEGER DEFAULT 1,
+                    note TEXT,
                     card_keys TEXT,
                     original_amount DECIMAL(10, 2),
                     discount_code TEXT,
@@ -137,6 +138,7 @@ export default async function BuyPage({ params }: BuyPageProps) {
                 ALTER TABLE cards ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS card_keys TEXT;
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS note TEXT;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS original_amount DECIMAL(10, 2);
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code TEXT;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10, 2);

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Coins } from "lucide-react"
 import { toast } from "sonner"
 import { useI18n } from "@/lib/i18n/context"
@@ -32,6 +33,7 @@ export function BuyButton({ productId, price, productName, stockCount = 0, singl
     const [discountApplying, setDiscountApplying] = useState(false)
     const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; discountAmount: number; discountedAmount: number } | null>(null)
     const [quantity, setQuantity] = useState<number>(1)
+    const [note, setNote] = useState<string>('')
     const { t } = useI18n()
 
     const numericalPrice = Number(price)
@@ -54,7 +56,7 @@ export function BuyButton({ productId, price, productName, stockCount = 0, singl
     const handleBuy = async () => {
         try {
             setLoading(true)
-            const result = await createOrder(productId, undefined, usePoints, appliedDiscount?.code || undefined, quantity)
+            const result = await createOrder(productId, undefined, usePoints, appliedDiscount?.code || undefined, quantity, note)
 
             if (!result?.success) {
                 const message = result?.error ? t(result.error) : t('common.error')
@@ -215,6 +217,19 @@ export function BuyButton({ productId, price, productName, stockCount = 0, singl
                                     <span className="text-xs text-muted-foreground">{t('buy.modal.reusableKeyHint') || 'Reusable single key'}</span>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Buyer Note */}
+                        <div className="grid gap-2">
+                            <Label htmlFor="buyer-note">{t('buy.modal.note')}</Label>
+                            <Textarea
+                                id="buyer-note"
+                                value={note}
+                                onChange={(e) => setNote(e.target.value.slice(0, 500))}
+                                placeholder={t('buy.modal.notePlaceholder')}
+                                disabled={loading}
+                            />
+                            <div className="text-xs text-muted-foreground text-right">{note.length}/500</div>
                         </div>
 
                         {points > 0 && (

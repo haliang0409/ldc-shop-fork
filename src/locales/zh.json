@@ -96,7 +96,9 @@
             "proceedPayment": "前往支付",
             "quantity": "数量",
             "maxQuantity": "最多：{{max}}",
-            "reusableKeyHint": "可重复单卡密"
+            "reusableKeyHint": "可重复单卡密",
+            "note": "订单备注",
+            "notePlaceholder": "可选，填写给商家的备注，例如账号/要求..."
         },
         "paymentSuccessPoints": "积分支付成功！"
     },
@@ -146,6 +148,7 @@
         "clickToCopy": "点击复制：",
         "saveKeySecurely": "请妥善保管此密钥",
         "quantityLabel": "数量：{{qty}}",
+        "note": "订单备注",
         "loginToView": "请使用购买时使用的账号登录以查看内容",
         "waitingPayment": "等待支付...",
         "payNow": "去支付",
@@ -337,6 +340,7 @@
             "detail": "详情",
             "email": "邮箱",
             "emailPlaceholder": "可选邮箱",
+            "note": "订单备注",
             "createdAt": "创建时间",
             "paidAt": "支付时间",
             "deliveredAt": "发货时间",

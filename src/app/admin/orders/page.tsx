@@ -44,6 +44,7 @@ export default async function AdminOrdersPage(props: {
         whereParts.push(or(
             sql`${orders.orderId} ILIKE ${like}`,
             sql`${orders.productName} ILIKE ${like}`,
+            sql`COALESCE(${orders.note}, '') ILIKE ${like}`,
             sql`COALESCE(${orders.username}, '') ILIKE ${like}`,
             sql`COALESCE(${orders.email}, '') ILIKE ${like}`,
             sql`COALESCE(${orders.tradeNo}, '') ILIKE ${like}`

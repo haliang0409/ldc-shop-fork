@@ -80,6 +80,7 @@ export async function GET(req: Request) {
         whereParts.push(or(
           sql`${orders.orderId} ILIKE ${like}`,
           sql`${orders.productName} ILIKE ${like}`,
+          sql`COALESCE(${orders.note}, '') ILIKE ${like}`,
           sql`COALESCE(${orders.username}, '') ILIKE ${like}`,
           sql`COALESCE(${orders.email}, '') ILIKE ${like}`,
           sql`COALESCE(${orders.tradeNo}, '') ILIKE ${like}`
@@ -91,21 +92,22 @@ export async function GET(req: Request) {
         where: whereExpr,
         orderBy: [desc(orders.createdAt)],
       })
-      const mapped = orderRows.map((o) => ({
-        orderId: o.orderId,
-        username: o.username,
-        email: includeSecrets ? o.email : null,
-        productId: o.productId,
-        productName: o.productName,
-        amount: o.amount,
-        status: o.status,
-        tradeNo: includeSecrets ? o.tradeNo : null,
-        cardKey: includeSecrets ? o.cardKey : null,
-        createdAt: o.createdAt,
-        paidAt: o.paidAt,
-        deliveredAt: o.deliveredAt,
-        userId: o.userId,
-      }))
+        const mapped = orderRows.map((o) => ({
+          orderId: o.orderId,
+          username: o.username,
+          email: includeSecrets ? o.email : null,
+          productId: o.productId,
+          productName: o.productName,
+          amount: o.amount,
+          note: (o as any).note || null,
+          status: o.status,
+          tradeNo: includeSecrets ? o.tradeNo : null,
+          cardKey: includeSecrets ? o.cardKey : null,
+          createdAt: o.createdAt,
+          paidAt: o.paidAt,
+          deliveredAt: o.deliveredAt,
+          userId: o.userId,
+        }))
 
       if (format === "json") {
         return NextResponse.json(mapped, {
@@ -123,6 +125,7 @@ export async function GET(req: Request) {
           "productId",
           "productName",
           "amount",
+          "note",
           "status",
           "tradeNo",
           "cardKey",

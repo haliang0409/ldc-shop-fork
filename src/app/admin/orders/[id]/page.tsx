@@ -24,6 +24,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         status: order.status,
         tradeNo: order.tradeNo,
         cardKey: order.cardKey,
+        note: (order as any).note || null,
         createdAt: order.createdAt,
         paidAt: order.paidAt,
         deliveredAt: order.deliveredAt,
@@ -31,4 +32,3 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     />
   )
 }
-

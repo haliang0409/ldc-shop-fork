@@ -22,6 +22,7 @@ async function ensureOrdersColumns() {
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_adjusted_at TIMESTAMP;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS card_keys TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS note TEXT;
     `)
 }
 

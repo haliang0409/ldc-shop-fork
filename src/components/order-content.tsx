@@ -22,6 +22,7 @@ interface Order {
     cardKey: string | null
     cardKeys?: string | null
     quantity?: number
+    note?: string | null
     createdAt: Date | null
     paidAt: Date | null
 }
@@ -114,6 +115,13 @@ export function OrderContent({ order, canViewKey, isOwner, refundRequest }: Orde
                                 <CreditCard className="h-5 w-5 text-primary" />
                             </div>
                         </div>
+
+                        {order.note && (
+                            <div className="p-4 bg-gradient-to-r from-muted/40 to-muted/20 rounded-xl border border-border/30">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('order.note')}</p>
+                                <p className="mt-1 whitespace-pre-wrap break-words text-sm">{order.note}</p>
+                            </div>
+                        )}
 
                         {/* Time Info */}
                         <div className="grid grid-cols-2 gap-3">
