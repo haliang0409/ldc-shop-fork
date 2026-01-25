@@ -183,6 +183,21 @@
             "lowStockThreshold": "库存预警阈值",
             "saveThreshold": "保存阈值",
             "shopNameEmpty": "商店名称不能为空",
+            "footer": {
+                "title": "页脚",
+                "hint": "自定义页面左下角文案与右下角内容（支持纯文字或文字+链接，可添加多个）。",
+                "left": "左下角文案",
+                "leftPlaceholder": "可选，留空则使用默认免责声明。",
+                "right": "右下角内容",
+                "rightEmpty": "暂无内容，可按需添加。",
+                "add": "添加一项",
+                "remove": "移除",
+                "itemText": "文字",
+                "itemTextPlaceholder": "例如：GitHub：ldc-shop-fork",
+                "itemHref": "链接（可选）",
+                "itemHrefPlaceholder": "https://example.com",
+                "save": "保存页脚"
+            },
             "checkin": {
                 "title": "每日签到",
                 "rewardTooltip": "签到奖励 (积分)",

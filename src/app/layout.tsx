@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Providers } from "@/components/providers";
 import { cn } from "@/lib/utils";
 import { getSetting } from "@/lib/db/queries";
+import { normalizeFooterConfig, parseFooterConfig } from "@/lib/footer-config";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // This layout remains sync for streaming; footer config is fetched in a nested async boundary.
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
@@ -37,10 +39,21 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
             <div className="flex-1">{children}</div>
-            <SiteFooter />
+            <FooterWithConfig />
           </div>
         </Providers>
       </body>
     </html>
   );
+}
+
+async function FooterWithConfig() {
+  let footerConfig = null
+  try {
+    const raw = await getSetting("footer_config")
+    footerConfig = normalizeFooterConfig(parseFooterConfig(raw))
+  } catch {
+    footerConfig = null
+  }
+  return <SiteFooter config={footerConfig} />
 }

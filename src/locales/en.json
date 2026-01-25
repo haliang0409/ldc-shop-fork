@@ -183,6 +183,21 @@
             "lowStockThreshold": "Low stock threshold",
             "saveThreshold": "Save threshold",
             "shopNameEmpty": "Store name cannot be empty",
+            "footer": {
+                "title": "Footer",
+                "hint": "Customize the bottom-left text and bottom-right items (text only, or text + link).",
+                "left": "Bottom-left text",
+                "leftPlaceholder": "Optional. Leave empty to use default disclaimer.",
+                "right": "Bottom-right items",
+                "rightEmpty": "No items yet. Add one if needed.",
+                "add": "Add item",
+                "remove": "Remove",
+                "itemText": "Text",
+                "itemTextPlaceholder": "e.g. GitHub: ldc-shop-fork",
+                "itemHref": "Link (optional)",
+                "itemHrefPlaceholder": "https://example.com",
+                "save": "Save footer"
+            },
             "checkin": {
                 "title": "Check-in",
                 "rewardTooltip": "Check-in Reward (Points)",

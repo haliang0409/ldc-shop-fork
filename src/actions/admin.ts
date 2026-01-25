@@ -6,6 +6,7 @@ import { products, cards, reviews, categories } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { setSetting } from "@/lib/db/queries"
+import { normalizeFooterConfig, type FooterConfig } from "@/lib/footer-config"
 
 // Check Admin Helper
 // Check Admin Helper
@@ -219,6 +220,35 @@ export async function saveCheckinEnabled(enabled: boolean) {
     await setSetting('checkin_enabled', enabled ? 'true' : 'false')
     revalidatePath('/admin')
     revalidatePath('/')
+}
+
+export async function saveFooterConfig(raw: FooterConfig) {
+    await checkAdmin()
+
+    const normalized = normalizeFooterConfig(raw)
+    const payload = JSON.stringify(normalized || { left: null, right: [] })
+
+    try {
+        await setSetting('footer_config', payload)
+    } catch (error: any) {
+        if (error.message?.includes('does not exist') ||
+            error.code === '42P01' ||
+            JSON.stringify(error).includes('42P01')) {
+            await db.execute(sql`
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT,
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            `)
+            await setSetting('footer_config', payload)
+        } else {
+            throw error
+        }
+    }
+
+    revalidatePath('/')
+    revalidatePath('/admin')
 }
 
 async function ensureCategoriesTable() {

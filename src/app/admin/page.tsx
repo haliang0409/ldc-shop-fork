@@ -3,9 +3,10 @@ import { orders } from "@/lib/db/schema"
 import { desc } from "drizzle-orm"
 import { getProducts, getDashboardStats, getSetting, getVisitorCount, getRecentOrders } from "@/lib/db/queries"
 import { AdminProductsContent } from "@/components/admin/products-content"
+import { normalizeFooterConfig, parseFooterConfig } from "@/lib/footer-config"
 
 export default async function AdminPage() {
-    const [products, stats, shopName, visitorCount, lowStockThreshold, recentOrders, checkinReward, checkinEnabled] = await Promise.all([
+    const [products, stats, shopName, visitorCount, lowStockThreshold, recentOrders, checkinReward, checkinEnabled, footerConfig] = await Promise.all([
         getProducts(),
         getDashboardStats(),
         (async () => {
@@ -54,6 +55,14 @@ export default async function AdminPage() {
                 return true
             }
         })(),
+        (async () => {
+            try {
+                const raw = await getSetting('footer_config')
+                return normalizeFooterConfig(parseFooterConfig(raw))
+            } catch {
+                return null
+            }
+        })(),
     ])
 
     return (
@@ -82,6 +91,7 @@ export default async function AdminPage() {
             }))}
             checkinReward={checkinReward}
             checkinEnabled={checkinEnabled}
+            footerConfig={footerConfig}
         />
     )
 }

@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Eye, EyeOff, ArrowUp, ArrowDown, TrendingUp, ShoppingCart, CreditCard, Package, Users } from "lucide-react"
-import { deleteProduct, toggleProductStatus, reorderProduct, saveShopName, saveLowStockThreshold, saveCheckinReward, saveCheckinEnabled } from "@/actions/admin"
+import { deleteProduct, toggleProductStatus, reorderProduct, saveShopName, saveLowStockThreshold, saveCheckinReward, saveCheckinEnabled, saveFooterConfig } from "@/actions/admin"
 import { toast } from "sonner"
+import type { FooterConfig, FooterRightItem } from "@/lib/footer-config"
 
 interface Product {
     id: string
@@ -41,9 +43,10 @@ interface AdminProductsContentProps {
     checkinReward: number
     recentOrders: Array<{ orderId: string; productName: string; amount: string; status: string; createdAt: Date | null }>
     checkinEnabled: boolean
+    footerConfig: FooterConfig | null
 }
 
-export function AdminProductsContent({ products, stats, shopName, visitorCount, lowStockThreshold, checkinReward, recentOrders, checkinEnabled }: AdminProductsContentProps) {
+export function AdminProductsContent({ products, stats, shopName, visitorCount, lowStockThreshold, checkinReward, recentOrders, checkinEnabled, footerConfig }: AdminProductsContentProps) {
     const { t } = useI18n()
 
     // State
@@ -56,6 +59,10 @@ export function AdminProductsContent({ products, stats, shopName, visitorCount, 
     const [savingReward, setSavingReward] = useState(false)
     const [enabledCheckin, setEnabledCheckin] = useState(checkinEnabled)
     const [savingEnabled, setSavingEnabled] = useState(false)
+
+    const [footerLeft, setFooterLeft] = useState<string>((footerConfig?.left || '').trim())
+    const [footerRight, setFooterRight] = useState<FooterRightItem[]>(Array.isArray(footerConfig?.right) ? footerConfig!.right! : [])
+    const [savingFooter, setSavingFooter] = useState(false)
 
     // Derived state directly to avoid Hook complexity/errors
     const threshold = Number.parseInt(thresholdValue, 10) || 5
@@ -115,6 +122,18 @@ export function AdminProductsContent({ products, stats, shopName, visitorCount, 
             toast.error(e.message)
         } finally {
             setSavingShopName(false)
+        }
+    }
+
+    const handleSaveFooter = async () => {
+        setSavingFooter(true)
+        try {
+            await saveFooterConfig({ left: footerLeft, right: footerRight })
+            toast.success(t('common.success'))
+        } catch (e: any) {
+            toast.error(e.message || t('common.error'))
+        } finally {
+            setSavingFooter(false)
         }
     }
 
@@ -219,6 +238,91 @@ export function AdminProductsContent({ products, stats, shopName, visitorCount, 
                                     </Button>
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    <div className="border-t pt-4 mt-4 space-y-4">
+                        <div className="space-y-1">
+                            <div className="text-sm font-medium">{t('admin.settings.footer.title')}</div>
+                            <p className="text-xs text-muted-foreground">{t('admin.settings.footer.hint')}</p>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="footer-left">{t('admin.settings.footer.left')}</Label>
+                                <Textarea
+                                    id="footer-left"
+                                    value={footerLeft}
+                                    onChange={(e) => setFooterLeft(e.target.value.slice(0, 1000))}
+                                    placeholder={t('admin.settings.footer.leftPlaceholder')}
+                                />
+                                <div className="text-xs text-muted-foreground text-right">{footerLeft.length}/1000</div>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label>{t('admin.settings.footer.right')}</Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setFooterRight((prev) => [...prev, { text: '', href: null }])}
+                                    >
+                                        {t('admin.settings.footer.add')}
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {footerRight.length === 0 ? (
+                                        <div className="text-xs text-muted-foreground">{t('admin.settings.footer.rightEmpty')}</div>
+                                    ) : (
+                                        footerRight.map((it, idx) => (
+                                            <div key={idx} className="grid gap-2 rounded-md border p-3 bg-muted/10">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor={`footer-right-text-${idx}`}>{t('admin.settings.footer.itemText')}</Label>
+                                                    <Input
+                                                        id={`footer-right-text-${idx}`}
+                                                        value={it.text}
+                                                        onChange={(e) => {
+                                                            const v = e.target.value
+                                                            setFooterRight((prev) => prev.map((p, i) => i === idx ? { ...p, text: v.slice(0, 120) } : p))
+                                                        }}
+                                                        placeholder={t('admin.settings.footer.itemTextPlaceholder')}
+                                                    />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor={`footer-right-href-${idx}`}>{t('admin.settings.footer.itemHref')}</Label>
+                                                    <Input
+                                                        id={`footer-right-href-${idx}`}
+                                                        value={it.href || ''}
+                                                        onChange={(e) => {
+                                                            const v = e.target.value
+                                                            setFooterRight((prev) => prev.map((p, i) => i === idx ? { ...p, href: v ? v.slice(0, 2048) : null } : p))
+                                                        }}
+                                                        placeholder={t('admin.settings.footer.itemHrefPlaceholder')}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => setFooterRight((prev) => prev.filter((_, i) => i !== idx))}
+                                                    >
+                                                        {t('admin.settings.footer.remove')}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button onClick={handleSaveFooter} disabled={savingFooter}>
+                                {savingFooter ? t('common.processing') : t('admin.settings.footer.save')}
+                            </Button>
                         </div>
                     </div>
 
